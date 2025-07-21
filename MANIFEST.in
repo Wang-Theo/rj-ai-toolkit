@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include requirements.txt
+include setup.py
+recursive-include examples *.py
+recursive-include agent_toolkit *.py
+recursive-exclude agent_toolkit __pycache__
+recursive-exclude agent_toolkit *.pyc
+recursive-exclude agent_toolkit *.pyo
+recursive-exclude * .DS_Store
