@@ -5,7 +5,7 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Union
 
 
 class BaseDBManager(ABC):
@@ -13,15 +13,6 @@ class BaseDBManager(ABC):
     
     定义所有数据库管理器必须实现的接口。
     """
-    
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """初始化数据库管理器
-        
-        Args:
-            config: 数据库配置参数
-        """
-        self.config = config or {}
-        self.is_connected = False
     
     @abstractmethod
     def connect(self) -> bool:
@@ -163,22 +154,6 @@ class BaseDBManager(ABC):
         """
         pass
     
-    def get_config(self) -> Dict[str, Any]:
-        """获取配置信息
-        
-        Returns:
-            配置字典
-        """
-        return self.config.copy()
-    
-    def update_config(self, new_config: Dict[str, Any]):
-        """更新配置信息
-        
-        Args:
-            new_config: 新配置
-        """
-        self.config.update(new_config)
-    
     def __enter__(self):
         """上下文管理器入口"""
         self.connect()
@@ -187,11 +162,4 @@ class BaseDBManager(ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """上下文管理器出口"""
         self.disconnect()
-    
-    def __del__(self):
-        """析构函数"""
-        if hasattr(self, 'is_connected') and self.is_connected:
-            try:
-                self.disconnect()
-            except:
-                pass
+
