@@ -5,7 +5,7 @@
 """
 
 from typing import List, Dict, Any, Optional
-from langchain.schema import Document
+from langchain_core.documents import Document
 from .base_chunker import BaseChunker, ChunkConfig
 from .recursive_chunker import RecursiveChunker
 from .semantic_chunker import SemanticChunker

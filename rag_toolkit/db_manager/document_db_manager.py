@@ -9,7 +9,7 @@ import json
 from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 from datetime import datetime
-from langchain.schema import Document
+from langchain_core.documents import Document
 from .vector_db_manager import VectorDBManager
 
 
