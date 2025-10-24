@@ -14,9 +14,9 @@ from .chunker.hybrid_chunker import HybridChunker
 # Parser imports
 from .parser.base_parser import BaseParser
 from .parser.pdf_parser import PDFParser
-from .parser.text_parser import TextParser
-from .parser.word_parser import WordParser
-from .parser.markdown_parser import MarkdownParser
+from .parser.docx_parser import DOCXParser
+from .parser.eml_parser import EMLParser
+from .parser.pptx_parser import PPTXParser
 
 # DB Manager imports
 from .db_manager.base_db_manager import BaseDBManager
@@ -47,9 +47,9 @@ __all__ = [
     # Parser exports
     "BaseParser",
     "PDFParser",
-    "WordParser",
-    "TextParser",
-    "MarkdownParser",
+    "DOCXParser",
+    "EMLParser",
+    "PPTXParser",
     # DB Manager exports
     "BaseDBManager",
     "VectorDBManager",
