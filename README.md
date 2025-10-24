@@ -36,6 +36,11 @@ RJ AI Toolkit 是一个企业级AI开发工具包集合，提供了开发智能�
 pip install git+https://github.com/Wang-Theo/rj-ai-toolkit.git
 ```
 
+#### 从 GitHub 更新（推荐）
+```bash
+pip install --upgrade --force-reinstall git+https://github.com/Wang-Theo/rj-ai-toolkit.git
+```
+
 #### 从源码安装
 ```bash
 git clone https://github.com/Wang-Theo/rj-ai-toolkit.git
