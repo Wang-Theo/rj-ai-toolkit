@@ -5,17 +5,14 @@ RAG Toolkit
 提供完整的文档处理、向量检索、重排序等RAG功能。
 """
 
-from .api import RAGApi
-
 # Chunker imports
 from .chunker.base_chunker import BaseChunker
-from .chunker.document_chunker import DocumentChunker
 from .chunker.recursive_chunker import RecursiveChunker
 from .chunker.semantic_chunker import SemanticChunker
+from .chunker.hybrid_chunker import HybridChunker
 
 # Parser imports
 from .parser.base_parser import BaseParser
-from .parser.document_parser import DocumentParser
 from .parser.pdf_parser import PDFParser
 from .parser.text_parser import TextParser
 from .parser.word_parser import WordParser
@@ -36,22 +33,19 @@ from .retriever.bm25_retriever import BM25Retriever
 
 # Ranker imports
 from .ranker.base_ranker import BaseRanker
-from .ranker.document_ranker import DocumentRanker
 from .ranker.bge_ranker import BGERanker
 from .ranker.cohere_ranker import CohereRanker
 from .ranker.cross_encoder_ranker import CrossEncoderRanker
 
 __version__ = "0.1.0"
 __all__ = [
-    "RAGApi",
     # Chunker exports
     "BaseChunker",
-    "DocumentChunker",
-    "SemanticChunker", 
     "RecursiveChunker",
+    "SemanticChunker",
+    "HybridChunker",
     # Parser exports
     "BaseParser",
-    "DocumentParser",
     "PDFParser",
     "WordParser",
     "TextParser",
@@ -69,7 +63,6 @@ __all__ = [
     "BM25Retriever",
     # Ranker exports
     "BaseRanker",
-    "DocumentRanker",
     "CohereRanker",
     "BGERanker",
     "CrossEncoderRanker"

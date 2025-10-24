@@ -18,9 +18,9 @@ from .agent_toolkit import (
 # RAG Toolkit
 try:
     from .rag_toolkit import (
-        RAGApi,
-        DocumentChunker,
-        DocumentParser,
+        RecursiveChunker,
+        SemanticChunker,
+        HybridChunker,
         VectorDBManager,
         DocumentDBManager
     )
@@ -45,9 +45,9 @@ __all__ = [
 # 如果RAG模块可用，添加到导出列表
 if RAG_AVAILABLE:
     __all__.extend([
-        "RAGApi",
-        "DocumentChunker", 
-        "DocumentParser",
+        "RecursiveChunker",
+        "SemanticChunker",
+        "HybridChunker",
         "VectorDBManager",
         "DocumentDBManager"
     ])
