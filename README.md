@@ -21,7 +21,8 @@ RJ AI Toolkit 是一个企业级AI开发工具包集合，提供了开发智能�
 ### 📚 [RAG Toolkit](./rag_toolkit/README.md)
 **检索增强生成工具包**
 - 智能文档切块：递归切块、语义切块等多种策略
-- 多格式文档解析：PDF、Word、文本、Markdown等
+- 多格式文档解析：PDF、DOCX、EML、PPTX等，支持OCR
+- 统一图片处理：PNG格式，白底无透明，可配置DPI
 - 高效向量检索：基于BGE等先进嵌入模型
 - 混合检索策略：结合向量检索和BM25算法
 - 智能重排序：使用重排序模型提高检索精度
