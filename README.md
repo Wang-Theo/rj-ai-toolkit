@@ -38,6 +38,12 @@ pip install git+https://github.com/Wang-Theo/rj-ai-toolkit.git
 ```
 
 #### 从 GitHub 更新（推荐）
+- 安装最新版本
+```bash
+pip install -U git+https://github.com/Wang-Theo/rj-ai-toolkit.git
+```
+
+- 强制重新安装该包及其所有依赖项
 ```bash
 pip install --upgrade --force-reinstall git+https://github.com/Wang-Theo/rj-ai-toolkit.git
 ```
