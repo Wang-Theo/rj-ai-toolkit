@@ -9,7 +9,8 @@ RAG Toolkit
 from .chunker.base_chunker import BaseChunker
 from .chunker.recursive_chunker import RecursiveChunker
 from .chunker.semantic_chunker import SemanticChunker
-from .chunker.hybrid_chunker import HybridChunker
+from .chunker.eml_chunker import EMLChunker
+from .chunker.pptx_chunker import PPTXChunker
 
 # Parser imports
 from .parser.base_parser import BaseParser
@@ -43,7 +44,8 @@ __all__ = [
     "BaseChunker",
     "RecursiveChunker",
     "SemanticChunker",
-    "HybridChunker",
+    "EMLChunker",
+    "PPTXChunker",
     # Parser exports
     "BaseParser",
     "PDFParser",

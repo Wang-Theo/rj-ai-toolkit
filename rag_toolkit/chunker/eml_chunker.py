@@ -2,15 +2,11 @@
 邮件切块器
 
 专门用于切分 eml_parser 解析后的 Markdown 格式邮件内容。
-按照邮件链（每次发送/接收的邮件）进行切块，支持 token 上限控制。
+按照邮件链（每封邮件）进行切块，支持 token 上限控制。
 
 特殊性说明:
-- 输入格式: eml_parser 生成的 Markdown 格式邮件内容
-- 分隔符识别: 
-  * 英文邮件头格式: **From:** ... **Sent:** ... **To:**
-  * 简体中文格式: **发件人****: ... **发送时间**: ... **收件人**:
-  * 繁体中文格式: **寄件者****: ... **寄件日期**: ... **收件者**:
-  * 水平线分隔符: ---, * * *, ___
+- 输入格式: eml_parser 生成的 Markdown 格式邮件内容，包含 ## Email N 标记
+- 分隔符识别: ## Email N 标记（由 eml_parser 自动添加）
 - 切分策略: 优先按邮件消息切分，超过 token 限制时在邮件内部按句子切分
 - 保留表格: 表格内容作为整体不被切分
 """
@@ -27,10 +23,10 @@ class EMLChunker(BaseChunker):
     邮件切块器
     
     专门用于处理 eml_parser 输出的 Markdown 格式邮件内容。
-    按照邮件链（每次发送/接收的邮件）进行切块，确保邮件的完整性。
+    按照邮件链（每封邮件）进行切块，使用 ## Email N 标记识别邮件边界。
     
     特点:
-    - 识别多种语言的邮件头格式（英文、简体中文、繁体中文）
+    - 识别 eml_parser 添加的 ## Email N 标记
     - 优先保持单封邮件的完整性
     - 超过 token 限制时智能在邮件内部切分
     - 保护表格内容不被切分
@@ -39,7 +35,8 @@ class EMLChunker(BaseChunker):
     def __init__(
         self,
         chunk_size: int = 4000,
-        length_type: str = "token"
+        length_type: str = "token",
+        remove_emails: bool = True
     ):
         """
         初始化邮件切块器
@@ -51,21 +48,25 @@ class EMLChunker(BaseChunker):
             length_type: 长度计算方式，默认 "token"
                 - "char": 按字符数计算
                 - "token": 按 token 数计算（使用 GPT-4 tokenizer）
+            remove_emails: 是否删除邮箱地址，默认 True
+                - True: 删除所有邮箱地址以节省 token
+                - False: 保留邮箱地址
         
         示例:
-            # 使用默认配置（按 token 数）
+            # 使用默认配置（按 token 数，删除邮箱）
             chunker = EMLChunker()
             
             # 按字符数切分
             chunker = EMLChunker(chunk_size=2000, length_type="char")
             
-            # 自定义块大小
-            chunker = EMLChunker(chunk_size=2000)
+            # 保留邮箱地址
+            chunker = EMLChunker(remove_emails=False)
             
             # 按 token 数切分（适合 LLM 输入）
             chunker = EMLChunker(
                 chunk_size=512,      # 512 tokens
-                length_type="token"  # 使用 token 计数
+                length_type="token",  # 使用 token 计数
+                remove_emails=True   # 删除邮箱地址
             )
         """
         # 创建配置对象
@@ -74,6 +75,9 @@ class EMLChunker(BaseChunker):
             chunk_overlap=0  # 邮件切块不支持重叠
         )
         super().__init__(config)
+        
+        # 保存配置
+        self.remove_emails = remove_emails
         
         # 根据 length_type 选择长度函数
         if length_type == "char":
@@ -86,7 +90,7 @@ class EMLChunker(BaseChunker):
     
     def _split_email_by_messages(self, markdown_content: str) -> List[str]:
         """
-        将邮件 Markdown 内容按照单个邮件消息切分
+        将邮件 Markdown 内容按照 ## Email N 标记切分
         
         Args:
             markdown_content: eml_parser 生成的 Markdown 格式邮件内容
@@ -94,88 +98,36 @@ class EMLChunker(BaseChunker):
         Returns:
             邮件消息列表，每个元素是一封单独的邮件
         """
-        # 识别邮件分隔模式
-        # 1. 水平线分隔符: ---, * * *, ___
-        # 2. 邮件头格式: **From:** ... **Sent:** ... **To:**
+        # 识别 ## Email N 标记
+        pattern = r'^## Email (\d+)\s*$'
         
-        # 先按主邮件头（第一部分）和后续邮件分隔
-        parts = []
-        
-        # 提取第一个邮件头（通常是最新的邮件）
-        first_header_pattern = r'^#\s+.*?\n\n\*\*From:\*\*.*?\n.*?\*\*Date:\*\*.*?\n\n---\n\n'
-        first_match = re.search(first_header_pattern, markdown_content, re.MULTILINE | re.DOTALL)
-        
-        if first_match:
-            # 保存第一封邮件的头部
-            header_end = first_match.end()
-            current_pos = header_end
-        else:
-            current_pos = 0
-        
-        # 查找所有邮件分隔符和邮件头
-        # 支持两种邮件头格式：
-        # 1. 英文格式：**From:** ... **Sent:** ... **To:**
-        # 2. 中文格式：**发件人****: ... **发送时间 **: ... **收件人 **:
-        
-        # 英文邮件头模式
-        en_header_pattern = r'\*\*From:\*\*\s+.*?<.*?>\s*\n\*\*Sent:\*\*\s+.*?\n\*\*To:\*\*\s+.*?(?:\n\*\*Cc:\*\*.*?)?\n(?:\*\*Subject:\*\*.*?\n)?'
-        
-        # 中文邮件头模式：**发件人****:
-        cn_header_pattern = r'\*\*发件人\*\*\*\*:\s*.*?<.*?>\s*\n\*\*(?:发送时间|已发送)\s*\*\*\*\*:\s*.*?\n\*\*收件人\s*\*\*\*\*:\s*.*?(?:\n\*\*抄送\s*\*\*\*\*:.*?)?\n(?:\*\*主题\s*\*\*\*\*:.*?\n)?'
-        
-        # 繁体中文邮件头模式：**寄件者****:
-        tw_header_pattern = r'\*\*寄件[者人]\*\*\*\*:\s*.*?<.*?>\s*\n\*\*寄件日期\*\*\*\*:\s*.*?\n\*\*收件[者人]\s*\*\*\*\*:\s*.*?(?:\n\*\*副本\s*\*\*\*\*:.*?)?\n(?:\*\*主[题旨]\s*\*\*\*\*:.*?\n)?'
-        
-        # 找到所有邮件头的位置
+        # 找到所有邮件标记的位置
         message_positions = []
-        
-        # 查找所有英文格式的邮件头
-        for match in re.finditer(en_header_pattern, markdown_content, re.MULTILINE):
+        for match in re.finditer(pattern, markdown_content, re.MULTILINE):
             message_positions.append(match.start())
         
-        # 查找所有简体中文格式的邮件头
-        for match in re.finditer(cn_header_pattern, markdown_content, re.MULTILINE):
-            message_positions.append(match.start())
-        
-        # 查找所有繁体中文格式的邮件头
-        for match in re.finditer(tw_header_pattern, markdown_content, re.MULTILINE):
-            message_positions.append(match.start())
-        
-        # 去重并排序
-        message_positions = sorted(set(message_positions))
-        
-        # 如果没有找到任何邮件头，返回整个内容
+        # 如果没有找到任何标记，返回整个内容
         if not message_positions:
             return [markdown_content]
         
-        # 按照邮件头位置切分
+        # 按照标记位置切分
         messages = []
         
-        # 第一封邮件（从开始到第一个邮件头之前）
-        if message_positions:
-            first_message = markdown_content[:message_positions[0]].strip()
-            if first_message:
-                messages.append(first_message)
+        # 第一封邮件（从开始到第一个标记之前）
+        first_message = markdown_content[:message_positions[0]].strip()
+        if first_message:
+            messages.append(first_message)
         
         # 中间的邮件
         for i in range(len(message_positions) - 1):
             message = markdown_content[message_positions[i]:message_positions[i+1]].strip()
-            # 移除前后的水平线分隔符
-            message = re.sub(r'^[-*_\s]+\n', '', message)
-            message = re.sub(r'\n[-*_\s]+$', '', message)
             if message:
                 messages.append(message)
         
         # 最后一封邮件
         last_message = markdown_content[message_positions[-1]:].strip()
-        last_message = re.sub(r'^[-*_\s]+\n', '', last_message)
-        last_message = re.sub(r'\n[-*_\s]+$', '', last_message)
         if last_message:
             messages.append(last_message)
-        
-        # 如果切分后只有一个部分，可能是简单邮件，直接返回
-        if len(messages) <= 1:
-            return [markdown_content]
         
         return messages
     
@@ -276,26 +228,73 @@ class EMLChunker(BaseChunker):
         
         return chunks
     
+    def _remove_email_addresses(self, text: str) -> str:
+        """
+        删除文本中的所有邮箱地址,但保留原有的换行结构
+        
+        Args:
+            text: 输入文本
+            
+        Returns:
+            删除邮箱地址后的文本
+        """
+        # 匹配邮箱地址的正则表达式
+        # 支持常见格式: user@domain.com, <user@domain.com>, [user@domain.com](mailto:user@domain.com)
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        
+        # 先删除 Markdown 链接格式的邮箱: [xxx@xxx.com](mailto:xxx@xxx.com)
+        text = re.sub(r'\[' + email_pattern + r'\]\(mailto:' + email_pattern + r'\)', '', text)
+        
+        # 删除尖括号包裹的邮箱: <xxx@xxx.com>
+        text = re.sub(r'<' + email_pattern + r'>', '', text)
+        
+        # 删除普通的邮箱地址
+        text = re.sub(email_pattern, '', text)
+        
+        # 清理同一行内的多余空格(不跨行)
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            # 多个空格合并为一个
+            line = re.sub(r' +', ' ', line)
+            # 清理连续的逗号分号
+            line = re.sub(r'\s*[,;]\s*[,;]+', ',', line)
+            # 清理 ": ," 这样的情况
+            line = re.sub(r':\s*,', ':', line)
+            # 清理行首行尾空格
+            line = line.strip()
+            cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines)
+    
     def chunk(self, markdown_text: str) -> List[str]:
         """
         切分 Markdown 格式的邮件内容
         
         这是 BaseChunker 要求实现的主要接口方法。
+        根据 remove_emails 参数决定是否删除邮箱地址。
         
         Args:
             markdown_text: eml_parser 生成的 Markdown 格式邮件内容
             
         Returns:
-            切块后的文本列表（纯文本，不包含元数据）
+            切块后的文本列表（纯文本，不包含元数据，可选删除邮箱地址）
         
         示例:
+            # 默认删除邮箱地址
             chunker = EMLChunker(chunk_size=2000)
             chunks = chunker.chunk(email_markdown_content)
-            for chunk in chunks:
-                print(f"Chunk: {chunk[:100]}...")
+            
+            # 保留邮箱地址
+            chunker = EMLChunker(chunk_size=2000, remove_emails=False)
+            chunks = chunker.chunk(email_markdown_content)
         """
         if not markdown_text.strip():
             return []
+        
+        # 根据配置决定是否删除邮箱地址
+        if self.remove_emails:
+            markdown_text = self._remove_email_addresses(markdown_text)
         
         # 先按邮件消息切分
         messages = self._split_email_by_messages(markdown_text)

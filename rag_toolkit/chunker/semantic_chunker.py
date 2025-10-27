@@ -9,6 +9,7 @@ import numpy as np
 from typing import List, Optional, Callable
 from .base_chunker import BaseChunker, ChunkConfig
 import re
+import tiktoken
 
 
 class SemanticChunker(BaseChunker):
@@ -24,7 +25,8 @@ class SemanticChunker(BaseChunker):
         config: Optional[ChunkConfig] = None,
         embedding_func: Callable[[List[str]], List[List[float]]] = None,
         similarity_threshold: float = 0.5,
-        min_chunk_size: int = 100
+        min_chunk_size: int = 100,
+        length_type: str = "char"
     ):
         """
         初始化语义切块器
@@ -35,6 +37,11 @@ class SemanticChunker(BaseChunker):
                           签名: func(texts: List[str]) -> List[List[float]]
             similarity_threshold: 相似度阈值，低于此值将切分
             min_chunk_size: 最小块大小
+                - length_type="char": 按字符数
+                - length_type="token": 按 token 数
+            length_type: 长度计算方式，默认 "char"
+                - "char": 按字符数计算
+                - "token": 按 token 数计算（使用 GPT-4 tokenizer）
         
         Raises:
             ValueError: 如果未提供 embedding_func
@@ -47,6 +54,15 @@ class SemanticChunker(BaseChunker):
         self.embedding_func = embedding_func
         self.similarity_threshold = similarity_threshold
         self.min_chunk_size = min_chunk_size
+        
+        # 根据 length_type 选择长度函数
+        if length_type == "char":
+            self._length_function = len
+        elif length_type == "token":
+            tokenizer = tiktoken.encoding_for_model("gpt-4")
+            self._length_function = lambda text: len(tokenizer.encode(text))
+        else:
+            raise ValueError(f"不支持的 length_type: {length_type}，仅支持 'char' 或 'token'")
     
     def _call_embedding(self, texts: List[str]) -> List[List[float]]:
         """
@@ -130,7 +146,7 @@ class SemanticChunker(BaseChunker):
                 similarity_scores.append(similarity_matrix[i][j])
             
             avg_similarity = np.mean(similarity_scores) if similarity_scores else 1.0
-            current_chunk_size += len(sentences[i])
+            current_chunk_size += self._length_function(sentences[i])
             
             # 判断是否需要切分
             should_break = False
@@ -147,7 +163,7 @@ class SemanticChunker(BaseChunker):
             if should_break and current_chunk_size >= self.min_chunk_size:
                 breakpoints.append(i)
                 current_chunk_start = i
-                current_chunk_size = len(sentences[i])
+                current_chunk_size = self._length_function(sentences[i])
         
         # 添加结束点
         if breakpoints[-1] != len(sentences):
@@ -201,7 +217,7 @@ class SemanticChunker(BaseChunker):
         Args:
             sentences: 句子列表
             start_idx: 当前块起始索引
-            overlap_size: 重叠字符数
+            overlap_size: 重叠大小（字符数或 token 数，取决于 length_type）
             
         Returns:
             重叠句子列表
@@ -211,9 +227,10 @@ class SemanticChunker(BaseChunker):
         
         for i in range(start_idx - 1, -1, -1):
             sentence = sentences[i]
-            if current_size + len(sentence) <= overlap_size:
+            sentence_length = self._length_function(sentence)
+            if current_size + sentence_length <= overlap_size:
                 overlap_sentences.insert(0, sentence)
-                current_size += len(sentence)
+                current_size += sentence_length
             else:
                 break
         

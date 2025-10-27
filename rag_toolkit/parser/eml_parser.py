@@ -14,6 +14,7 @@ import mdformat
 import tempfile
 from PIL import Image
 from io import BytesIO
+import re
 from .base_parser import BaseParser
 
 
@@ -319,10 +320,51 @@ class EMLParser(BaseParser):
         
         return str(new_table)
     
+    def _mark_email_chain(self, markdown_content: str) -> str:
+        """
+        在邮件链中标记每封邮件
+        识别转发和回复邮件的标准格式，添加 ## Email N 标记
+        
+        最简单直接的识别规则(必须在行首):
+        - 英文: **From:**
+        - 简体中文: **发件人**
+        - 繁体中文: **寄件者**
+        
+        Args:
+            markdown_content: Markdown 格式的邮件内容
+            
+        Returns:
+            添加了邮件标记的 Markdown 内容
+        """
+        email_number = 2  # 从 Email 2 开始（Email 1 已在主邮件头添加）
+        lines = markdown_content.split('\n')
+        result_lines = []
+        
+        for line in lines:
+            # 检测邮件头起始行(必须在行首)
+            is_email_start = False
+            stripped_line = line.lstrip()
+            
+            if stripped_line.startswith('**From:**'):
+                is_email_start = True
+            elif stripped_line.startswith('**发件人'):
+                is_email_start = True
+            elif stripped_line.startswith('**寄件者'):
+                is_email_start = True
+            
+            # 如果检测到邮件头，添加标记
+            if is_email_start:
+                result_lines.append(f"\n## Email {email_number}\n")
+                email_number += 1
+            
+            result_lines.append(line)
+        
+        return '\n'.join(result_lines)
+    
     def _extract_content_as_markdown(self, mail, embedded_images: dict, attachments_base_dir: Path) -> str:
         """
         从邮件对象中提取内容并转换为 Markdown 格式
-        保留表格格式
+        保留表格格式，并为邮件链中的每封邮件添加标记
         
         Args:
             mail: mailparser 解析后的邮件对象
@@ -333,6 +375,9 @@ class EMLParser(BaseParser):
             Markdown 格式的邮件内容
         """
         content_parts = []
+        
+        # 添加主邮件标记（Email 1）
+        content_parts.append(f"## Email 1\n\n")
         
         # 添加邮件头信息
         content_parts.append(f"# {mail.subject or 'No Subject'}\n\n")
@@ -403,6 +448,9 @@ class EMLParser(BaseParser):
                     markdown_content = mdformat.text(markdown_content, options={"wrap": "no"})
                 except Exception:
                     markdown_content = markdown_content.strip()
+                
+                # 标记邮件链中的其他邮件
+                markdown_content = self._mark_email_chain(markdown_content)
                 
                 content_parts.append(markdown_content)
         
