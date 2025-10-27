@@ -7,24 +7,6 @@
 - **输出**：Markdown 格式文本
 - **图片**：保存为 PNG 格式（白底，无透明）
 
-## 基础用法
-
-### 导入
-
-```python
-from rag_toolkit.parser import EMLParser, PPTXParser, DOCXParser, PDFParser
-```
-
-### 基本解析
-
-```python
-# 创建解析器
-parser = DOCXParser()
-
-# 解析文件（返回 Markdown 文本）
-markdown_text = parser.parse_file("document.docx")
-```
-
 ## EML Parser
 
 ### 输入
@@ -35,6 +17,16 @@ markdown_text = parser.parse_file("document.docx")
 - 邮件头信息（发件人、收件人、主题、时间）
 - 邮件正文（HTML 转 Markdown）
 - 附件列表
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `save_attachments` | bool | True | 是否保存附件 |
+| `attachments_dir` | str/Path | None | 附件保存目录 |
+| `use_ocr` | bool | False | 是否启用 OCR |
+| `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
+| `image_dpi` | int | 300 | 图片 DPI（分辨率） |
 
 ### 使用
 
@@ -60,6 +52,9 @@ parser = EMLParser(
 ```
 
 ### 附件保存结构
+
+如未指定 `attachments_dir`，默认在 EML 文件同目录下创建：
+
 ```
 {filename}_attachments/
 ├── embedded/     # 邮件内嵌图片（转为 PNG）
@@ -77,6 +72,16 @@ parser = EMLParser(
 - 文本内容
 - 表格（HTML 格式）
 - 图片引用
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `save_images` | bool | True | 是否保存图片 |
+| `images_dir` | str/Path | None | 图片保存目录 |
+| `use_ocr` | bool | False | 是否启用 OCR |
+| `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
+| `image_dpi` | int | 300 | 图片 DPI（分辨率） |
 
 ### 使用
 
@@ -103,6 +108,9 @@ parser = PPTXParser(
 ```
 
 ### 图片保存结构
+
+如未指定 `images_dir`，默认在 PPTX 文件同目录下创建：
+
 ```
 {filename}_images/
 ├── image_001.png
@@ -121,6 +129,16 @@ parser = PPTXParser(
 - 段落文本
 - 表格（HTML 格式）
 - 图片引用
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `save_images` | bool | True | 是否保存图片 |
+| `images_dir` | str/Path | None | 图片保存目录 |
+| `use_ocr` | bool | False | 是否启用 OCR |
+| `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
+| `image_dpi` | int | 300 | 图片 DPI（分辨率） |
 
 ### 使用
 
@@ -147,6 +165,9 @@ parser = DOCXParser(
 ```
 
 ### 图片保存结构
+
+如未指定 `images_dir`，默认在 DOCX 文件同目录下创建：
+
 ```
 {filename}_images/
 ├── image_1.png
@@ -165,6 +186,16 @@ parser = DOCXParser(
 - 文本内容
 - 表格（HTML 格式）
 - 图片引用（仅 OCR 模式）
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `save_images` | bool | True | 是否保存图片 |
+| `images_dir` | str/Path | None | 图片保存目录 |
+| `use_ocr` | bool | False | 是否启用 OCR |
+| `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
+| `image_dpi` | int | 300 | 图片 DPI（分辨率） |
 
 ### 使用
 
@@ -186,36 +217,15 @@ markdown = parser.parse_file("scanned.pdf")
 ```
 
 ### 图片保存结构（OCR 模式）
+
+如未指定 `images_dir`，默认在 PDF 文件同目录下创建：
+
 ```
 {filename}_images/
 ├── page_1_image_1.png
 ├── page_2_image_1.png
 └── ...
 ```
-
-## 参数说明
-
-### 通用参数
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `use_ocr` | bool | False | 是否启用 OCR |
-| `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
-| `image_dpi` | int | 300 | 图片 DPI（分辨率） |
-
-### EML 专用参数
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `save_attachments` | bool | True | 是否保存附件 |
-| `attachments_dir` | str/Path | None | 附件保存目录 |
-
-### PPTX/DOCX/PDF 专用参数
-
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `save_images` | bool | True | 是否保存图片 |
-| `images_dir` | str/Path | None | 图片保存目录 |
 
 ## OCR 函数示例
 
@@ -250,6 +260,22 @@ parser = DOCXParser(
 - **格式**：PNG（无损）
 - **颜色**：RGB（透明背景自动转为白底）
 - **DPI**：可配置（默认 300）
+
+## 附件和图片目录
+
+如果不指定保存目录，各 Parser 会自动创建：
+- **EML Parser**：`{filename}_attachments/` （附件和嵌入图片）
+- **PPTX Parser**：`{filename}_images/` （图片）
+- **DOCX Parser**：`{filename}_images/` （图片）
+- **PDF Parser**：`{filename}_images/` （OCR 模式下的图片）
+
+## OCR 使用说明
+
+启用 OCR 时：
+- 必须提供 `ocr_func` 参数
+- OCR 函数签名：`func(image_path: str) -> str`
+- 图片会先保存到临时文件，然后传给 OCR 函数
+- 建议配合 `image_dpi` 参数调整识别精度
 
 ## 获取支持的文件类型
 
