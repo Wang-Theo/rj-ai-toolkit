@@ -5,12 +5,8 @@
 使用句子embedding和相似度计算来确定切分点。
 """
 
-import uuid
 import numpy as np
-from typing import List, Dict, Any, Optional, Tuple
-from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from typing import List, Optional, Callable
 from .base_chunker import BaseChunker, ChunkConfig
 import re
 
@@ -25,8 +21,8 @@ class SemanticChunker(BaseChunker):
     
     def __init__(
         self, 
-        config: ChunkConfig,
-        embeddings: Optional[Embeddings] = None,
+        config: Optional[ChunkConfig] = None,
+        embedding_func: Callable[[List[str]], List[List[float]]] = None,
         similarity_threshold: float = 0.5,
         min_chunk_size: int = 100
     ):
@@ -35,24 +31,40 @@ class SemanticChunker(BaseChunker):
         
         Args:
             config: 切块配置
-            embeddings: 嵌入模型，默认使用BGE
+            embedding_func: embedding处理函数（必需），接收文本列表返回向量列表。
+                          签名: func(texts: List[str]) -> List[List[float]]
             similarity_threshold: 相似度阈值，低于此值将切分
             min_chunk_size: 最小块大小
+        
+        Raises:
+            ValueError: 如果未提供 embedding_func
         """
         super().__init__(config)
         
-        # 初始化嵌入模型
-        if embeddings is None:
-            self.embeddings = HuggingFaceEmbeddings(
-                model_name="BAAI/bge-small-zh-v1.5",  # 中文语义模型
-                model_kwargs={'device': 'cpu'},
-                encode_kwargs={'normalize_embeddings': True}
-            )
-        else:
-            self.embeddings = embeddings
-            
+        if embedding_func is None:
+            raise ValueError("语义切块器必须提供 embedding_func 参数")
+        
+        self.embedding_func = embedding_func
         self.similarity_threshold = similarity_threshold
         self.min_chunk_size = min_chunk_size
+    
+    def _call_embedding(self, texts: List[str]) -> List[List[float]]:
+        """
+        调用embedding函数处理文本
+        
+        Args:
+            texts: 文本列表
+            
+        Returns:
+            文本向量列表
+            
+        Raises:
+            RuntimeError: 如果embedding处理失败
+        """
+        try:
+            return self.embedding_func(texts)
+        except Exception as e:
+            raise RuntimeError(f"Embedding 处理失败: {str(e)}")
     
     def _split_into_sentences(self, text: str) -> List[str]:
         """
@@ -87,7 +99,7 @@ class SemanticChunker(BaseChunker):
             return np.array([[1.0]])
         
         # 获取句子嵌入
-        embeddings = self.embeddings.embed_documents(sentences)
+        embeddings = self._call_embedding(sentences)
         embeddings = np.array(embeddings)
         
         # 计算余弦相似度矩阵
@@ -146,22 +158,19 @@ class SemanticChunker(BaseChunker):
     def _create_chunks_from_breakpoints(
         self, 
         sentences: List[str], 
-        breakpoints: List[int],
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> List[Document]:
+        breakpoints: List[int]
+    ) -> List[str]:
         """
-        根据切分点创建文档块
+        根据切分点创建文本块
         
         Args:
             sentences: 句子列表
             breakpoints: 切分点列表
-            metadata: 元数据
             
         Returns:
-            文档块列表
+            文本块列表
         """
         chunks = []
-        source_doc_id = metadata.get("source_doc_id", str(uuid.uuid4())) if metadata else str(uuid.uuid4())
         
         for i in range(len(breakpoints) - 1):
             start_idx = breakpoints[i]
@@ -181,34 +190,7 @@ class SemanticChunker(BaseChunker):
                 )
                 chunk_text = "".join(overlap_sentences) + chunk_text
             
-            # 计算字符位置
-            start_char = sum(len(s) for s in sentences[:start_idx])
-            end_char = start_char + len(chunk_text)
-            
-            # 创建元数据
-            chunk_metadata = self._create_chunk_metadata(
-                chunk_id=self._generate_chunk_id(source_doc_id, i),
-                source_doc_id=source_doc_id,
-                chunk_index=i,
-                start_char=start_char,
-                end_char=end_char,
-                token_count=self._estimate_token_count(chunk_text),
-                original_metadata=metadata
-            )
-            
-            # 添加语义切块特有的元数据
-            chunk_metadata.update({
-                "chunk_type": "semantic",
-                "sentence_count": len(chunk_sentences),
-                "semantic_chunker_version": "1.0.0"
-            })
-            
-            # 创建文档块
-            chunk_doc = Document(
-                page_content=chunk_text,
-                metadata=chunk_metadata
-            )
-            chunks.append(chunk_doc)
+            chunks.append(chunk_text)
         
         return chunks
     
@@ -237,36 +219,25 @@ class SemanticChunker(BaseChunker):
         
         return overlap_sentences
     
-    def chunk_text(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> List[Document]:
+    def chunk(self, markdown_text: str) -> List[str]:
         """
-        将文本切分成语义块
+        切分 Markdown 文本
         
         Args:
-            text: 要切分的文本
-            metadata: 文档元数据
+            markdown_text: 输入的 Markdown 文本
             
         Returns:
-            切分后的文档块列表
+            切块后的文本列表
         """
-        if not text.strip():
+        if not markdown_text.strip():
             return []
         
         # 分割成句子
-        sentences = self._split_into_sentences(text)
+        sentences = self._split_into_sentences(markdown_text)
         
         if len(sentences) <= 1:
             # 只有一个句子，直接返回
-            source_doc_id = metadata.get("source_doc_id", str(uuid.uuid4())) if metadata else str(uuid.uuid4())
-            chunk_metadata = self._create_chunk_metadata(
-                chunk_id=self._generate_chunk_id(source_doc_id, 0),
-                source_doc_id=source_doc_id,
-                chunk_index=0,
-                start_char=0,
-                end_char=len(text),
-                token_count=self._estimate_token_count(text),
-                original_metadata=metadata
-            )
-            return [Document(page_content=text, metadata=chunk_metadata)]
+            return [markdown_text]
         
         # 计算相似度矩阵
         similarity_matrix = self._calculate_similarity_matrix(sentences)
@@ -274,65 +245,7 @@ class SemanticChunker(BaseChunker):
         # 找到切分点
         breakpoints = self._find_breakpoints(sentences, similarity_matrix)
         
-        # 创建文档块
-        chunks = self._create_chunks_from_breakpoints(sentences, breakpoints, metadata)
+        # 创建文本块
+        chunks = self._create_chunks_from_breakpoints(sentences, breakpoints)
         
         return chunks
-    
-    def chunk_document(self, document: Document) -> List[Document]:
-        """
-        将文档切分成语义块
-        
-        Args:
-            document: 要切分的文档
-            
-        Returns:
-            切分后的文档块列表
-        """
-        return self.chunk_text(document.page_content, document.metadata)
-    
-    def analyze_semantic_structure(self, text: str) -> Dict[str, Any]:
-        """
-        分析文本的语义结构
-        
-        Args:
-            text: 要分析的文本
-            
-        Returns:
-            语义结构分析结果
-        """
-        sentences = self._split_into_sentences(text)
-        
-        if len(sentences) <= 1:
-            return {
-                "sentence_count": len(sentences),
-                "semantic_complexity": "low",
-                "recommended_chunks": 1
-            }
-        
-        similarity_matrix = self._calculate_similarity_matrix(sentences)
-        
-        # 计算语义复杂度
-        avg_similarity = np.mean(similarity_matrix)
-        similarity_variance = np.var(similarity_matrix)
-        
-        # 语义复杂度评估
-        if avg_similarity > 0.7:
-            complexity = "low"  # 高相似度，结构简单
-        elif avg_similarity > 0.4:
-            complexity = "medium"
-        else:
-            complexity = "high"  # 低相似度，结构复杂
-        
-        # 推荐块数
-        breakpoints = self._find_breakpoints(sentences, similarity_matrix)
-        recommended_chunks = len(breakpoints) - 1
-        
-        return {
-            "sentence_count": len(sentences),
-            "avg_similarity": float(avg_similarity),
-            "similarity_variance": float(similarity_variance),
-            "semantic_complexity": complexity,
-            "recommended_chunks": recommended_chunks,
-            "total_length": len(text)
-        }
