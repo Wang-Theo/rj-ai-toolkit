@@ -28,8 +28,8 @@ export DASHSCOPE_API_KEY=your_api_key_here
 
 ### 2. 基本使用
 ```python
-from agent_toolkit import EnterpriseAgent, Config
-from agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
+from rj_ai_toolkit.agent_toolkit import EnterpriseAgent, Config
+from rj_ai_toolkit.agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
 
 # 创建配置
 config = Config()
@@ -51,8 +51,8 @@ print(result["output"])
 
 ### 3. 高级配置
 ```python
-from agent_toolkit import Config, EnterpriseAgent
-from agent_toolkit.tools import *
+from rj_ai_toolkit.agent_toolkit import Config, EnterpriseAgent
+from rj_ai_toolkit.agent_toolkit.tools import *
 
 # 自定义配置
 config = Config(

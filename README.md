@@ -68,8 +68,8 @@ pip install -r requirements.txt
 ### Agent Toolkit 使用示例
 
 ```python
-from agent_toolkit import EnterpriseAgent, Config
-from agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
+from rj_ai_toolkit.agent_toolkit import EnterpriseAgent, Config
+from rj_ai_toolkit.agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
 
 # 设置环境变量
 # set DASHSCOPE_API_KEY=your_api_key_here
@@ -93,8 +93,8 @@ print(result["output"])
 ### RAG Toolkit 使用示例
 
 ```python
-from rag_toolkit import RAGApi
-from rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_ai_toolkit.rag_toolkit import RAGApi
+from rj_ai_toolkit.rag_toolkit.chunker import ChunkConfig, ChunkStrategy
 
 # 初始化RAG系统
 rag = RAGApi(
@@ -230,7 +230,7 @@ agent.add_tool(create_custom_tool())
 
 ### 自定义RAG组件
 ```python
-from rag_toolkit.parser import BaseParser
+from rj_ai_toolkit.rag_toolkit.parser import BaseParser
 
 class CustomParser(BaseParser):
     def _get_supported_extensions(self):
