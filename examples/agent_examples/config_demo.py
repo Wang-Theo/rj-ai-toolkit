@@ -4,8 +4,8 @@ Agent配置示例
 演示如何自定义Agent的行为配置参数。
 """
 
-from agent_toolkit import EnterpriseAgent, Config
-from agent_toolkit.tools import create_calculator_tool
+from rj_agent_toolkit import EnterpriseAgent, Config
+from rj_agent_toolkit.tools import create_calculator_tool
 import os
 
 

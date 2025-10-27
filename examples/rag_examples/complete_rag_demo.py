@@ -6,9 +6,9 @@ RAG Toolkit 完整示例
 
 import os
 from pathlib import Path
-from rag_toolkit import RAGApi
-from rag_toolkit.chunker import ChunkConfig, ChunkStrategy
-from rag_toolkit.parser import ParseConfig
+from rj_rag_toolkit import RAGApi
+from rj_rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_rag_toolkit.parser import ParseConfig
 
 
 def main():
@@ -234,7 +234,7 @@ def advanced_demo():
     print("=" * 60)
     
     # 演示不同切块策略
-    from rag_toolkit.chunker import DocumentChunker, ChunkStrategy, ChunkConfig
+    from rj_rag_toolkit.chunker import DocumentChunker, ChunkStrategy, ChunkConfig
     
     chunk_config = ChunkConfig(chunk_size=300, chunk_overlap=30)
     chunker = DocumentChunker(config=chunk_config)

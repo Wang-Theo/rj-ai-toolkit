@@ -7,8 +7,8 @@ RJ AI Toolkit 完整示例
 
 import os
 from langchain_core.tools import Tool
-from agent_toolkit import EnterpriseAgent, Config
-from agent_toolkit.tools import (
+from rj_agent_toolkit import EnterpriseAgent, Config
+from rj_agent_toolkit.tools import (
     create_calculator_tool, 
     create_text_analyzer_tool,
     create_text_sentiment_tool

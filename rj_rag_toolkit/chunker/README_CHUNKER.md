@@ -31,7 +31,7 @@
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import RecursiveChunker
+from rj_rag_toolkit.chunker import RecursiveChunker
 
 # 基本用法
 chunker = RecursiveChunker()
@@ -75,7 +75,7 @@ chunker = RecursiveChunker(
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import SemanticChunker
+from rj_rag_toolkit.chunker import SemanticChunker
 
 # 定义 embedding 函数
 def get_embeddings(texts: List[str]) -> List[List[float]]:
@@ -123,8 +123,8 @@ chunker = SemanticChunker(
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import EMLChunker
-from rj_ai_toolkit.rag_toolkit.parser import EMLParser
+from rj_rag_toolkit.chunker import EMLChunker
+from rj_rag_toolkit.parser import EMLParser
 
 # 解析邮件
 parser = EMLParser()
@@ -172,8 +172,8 @@ chunker = EMLChunker(
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import PPTXChunker
-from rj_ai_toolkit.rag_toolkit.parser import PPTXParser
+from rj_rag_toolkit.chunker import PPTXChunker
+from rj_rag_toolkit.parser import PPTXParser
 
 # 解析 PPT
 parser = PPTXParser()

@@ -68,8 +68,8 @@ pip install -r requirements.txt
 ### Agent Toolkit 使用示例
 
 ```python
-from rj_ai_toolkit.agent_toolkit import EnterpriseAgent, Config
-from rj_ai_toolkit.agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
+from rj_agent_toolkit import EnterpriseAgent, Config
+from rj_agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
 
 # 设置环境变量
 # set DASHSCOPE_API_KEY=your_api_key_here
@@ -93,8 +93,8 @@ print(result["output"])
 ### RAG Toolkit 使用示例
 
 ```python
-from rj_ai_toolkit.rag_toolkit import RAGApi
-from rj_ai_toolkit.rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_rag_toolkit import RAGApi
+from rj_rag_toolkit.chunker import ChunkConfig, ChunkStrategy
 
 # 初始化RAG系统
 rag = RAGApi(
@@ -147,12 +147,12 @@ python examples/rag_examples/complete_rag_demo.py
 
 ```
 rj-ai-toolkit/
-├── agent_toolkit/                 # 🤖 智能对话代理工具包
+├── rj_agent_toolkit/              # 🤖 智能对话代理工具包
 │   ├── README.md                  # Agent文档
 │   ├── core/                      # 核心模块
 │   ├── tools/                     # 内置工具
 │   └── utils/                     # 实用工具
-├── rag_toolkit/                   # 📚 检索增强生成工具包
+├── rj_rag_toolkit/                # 📚 检索增强生成工具包
 │   ├── README.md                  # RAG文档
 │   ├── api.py                     # 统一API接口
 │   ├── chunker/                   # 文档切块器
@@ -230,7 +230,7 @@ agent.add_tool(create_custom_tool())
 
 ### 自定义RAG组件
 ```python
-from rj_ai_toolkit.rag_toolkit.parser import BaseParser
+from rj_rag_toolkit.parser import BaseParser
 
 class CustomParser(BaseParser):
     def _get_supported_extensions(self):

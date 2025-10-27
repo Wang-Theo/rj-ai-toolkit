@@ -8,7 +8,7 @@ Version: 0.1.0
 """
 
 # Agent Toolkit
-from .agent_toolkit import (
+from .rj_agent_toolkit import (
     EnterpriseAgent, 
     Config,
     create_calculator_tool,
@@ -17,12 +17,22 @@ from .agent_toolkit import (
 
 # RAG Toolkit
 try:
-    from .rag_toolkit import (
+    from .rj_rag_toolkit import (
         RecursiveChunker,
         SemanticChunker,
-        HybridChunker,
+        EMLChunker,
+        PPTXChunker,
+        PDFParser,
+        DOCXParser,
+        EMLParser,
+        PPTXParser,
         VectorDBManager,
-        DocumentDBManager
+        DocumentDBManager,
+        ChromaManager,
+        VectorRetriever,
+        HybridRetriever,
+        BM25Retriever,
+        BGERanker
     )
     RAG_AVAILABLE = True
 except ImportError:
@@ -45,18 +55,33 @@ __all__ = [
 # 如果RAG模块可用，添加到导出列表
 if RAG_AVAILABLE:
     __all__.extend([
+        # Chunker
         "RecursiveChunker",
         "SemanticChunker",
-        "HybridChunker",
+        "EMLChunker",
+        "PPTXChunker",
+        # Parser
+        "PDFParser",
+        "DOCXParser",
+        "EMLParser",
+        "PPTXParser",
+        # DB Manager
         "VectorDBManager",
-        "DocumentDBManager"
+        "DocumentDBManager",
+        "ChromaManager",
+        # Retriever
+        "VectorRetriever",
+        "HybridRetriever",
+        "BM25Retriever",
+        # Ranker
+        "BGERanker"
     ])
 
 def get_available_modules():
     """获取可用的模块列表"""
-    modules = ["agent_toolkit"]
+    modules = ["rj_agent_toolkit"]
     if RAG_AVAILABLE:
-        modules.append("rag_toolkit")
+        modules.append("rj_rag_toolkit")
     return modules
 
 def print_toolkit_info():

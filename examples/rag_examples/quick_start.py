@@ -4,8 +4,8 @@ RAG Toolkit 快速开始示例
 展示如何快速使用RAG功能。
 """
 
-from rag_toolkit import RAGApi
-from rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_rag_toolkit import RAGApi
+from rj_rag_toolkit.chunker import ChunkConfig, ChunkStrategy
 import tempfile
 import os
 

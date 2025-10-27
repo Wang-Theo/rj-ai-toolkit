@@ -31,7 +31,7 @@
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.parser import EMLParser
+from rj_rag_toolkit.parser import EMLParser
 
 # 基本用法
 parser = EMLParser()
@@ -86,7 +86,7 @@ parser = EMLParser(
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.parser import PPTXParser
+from rj_rag_toolkit.parser import PPTXParser
 
 # 基本用法
 parser = PPTXParser()
@@ -143,7 +143,7 @@ parser = PPTXParser(
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.parser import DOCXParser
+from rj_rag_toolkit.parser import DOCXParser
 
 # 基本用法
 parser = DOCXParser()
@@ -200,9 +200,9 @@ parser = DOCXParser(
 ### 使用
 
 ```python
-from rj_ai_toolkit.rag_toolkit.parser import PDFParser
+from rj_rag_toolkit.parser import PDFParser
 
-# 基本解析(仅提取文本和表格)
+# 基本解析（仅提取文本和表格）
 parser = PDFParser(save_images=False)
 markdown = parser.parse_file("document.pdf")
 

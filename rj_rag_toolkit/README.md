@@ -45,8 +45,8 @@ RAG Toolkit
 
 ### 1. 基本使用
 ```python
-from rj_ai_toolkit.rag_toolkit import RAGApi
-from rj_ai_toolkit.rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_rag_toolkit import RAGApi
+from rj_rag_toolkit.chunker import ChunkConfig, ChunkStrategy
 
 # 初始化RAG系统
 rag = RAGApi(
@@ -90,8 +90,8 @@ print(f"总共创建 {result['total_chunks']} 个文档块")
 
 ### 3. 高级配置
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import ChunkConfig, ChunkStrategy
-from rj_ai_toolkit.rag_toolkit.parser import ParseConfig
+from rj_rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_rag_toolkit.parser import ParseConfig
 
 # 切块配置
 chunk_config = ChunkConfig(
@@ -130,7 +130,7 @@ rag = RAGApi(
 
 ### 递归切块
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import DocumentChunker, ChunkStrategy
+from rj_rag_toolkit.chunker import DocumentChunker, ChunkStrategy
 
 chunker = DocumentChunker(strategy=ChunkStrategy.RECURSIVE)
 chunks = chunker.chunk_text(text)
@@ -196,7 +196,7 @@ results = rag.semantic_search(
 results = rag.search(query="查询", rerank=True)
 
 # 手动重排序
-from rj_ai_toolkit.rag_toolkit.ranker import BGERanker
+from rj_rag_toolkit.ranker import BGERanker
 ranker = BGERanker()
 reranked_results = ranker.rerank(query, results, top_k=5)
 ```
@@ -214,7 +214,7 @@ reranked_results = ranker.rerank(query, results, top_k=5)
 
 ### 自定义解析器
 ```python
-from rj_ai_toolkit.rag_toolkit.parser import BaseParser
+from rj_rag_toolkit.parser import BaseParser
 
 class CustomParser(BaseParser):
     def _get_supported_extensions(self):
@@ -230,7 +230,7 @@ parser.add_parser(["custom"], CustomParser())
 
 ### 自定义切块器
 ```python
-from rj_ai_toolkit.rag_toolkit.chunker import BaseChunker
+from rj_rag_toolkit.chunker import BaseChunker
 
 class CustomChunker(BaseChunker):
     def chunk_text(self, text, metadata=None):
