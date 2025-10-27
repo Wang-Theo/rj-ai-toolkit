@@ -68,6 +68,67 @@ parser = EMLParser(
 └── files/        # 附件文件
 ```
 
+## MSG Parser
+
+### 输入
+- `.msg` Outlook 邮件文件
+
+### 输出
+- Markdown 格式邮件内容
+- 邮件头信息（发件人、收件人、主题、时间）
+- 邮件正文（HTML 转 Markdown）
+- 附件列表
+
+### 参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `save_attachments` | bool | True | 是否保存附件 |
+| `attachments_dir` | str/Path | None | 附件保存目录 |
+| `use_ocr` | bool | False | 是否启用 OCR |
+| `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
+| `image_dpi` | int | 300 | 图片 DPI（分辨率） |
+
+### OCR 识别范围
+
+**MSG Parser 的 OCR 仅识别邮件正文中的内嵌图片**：
+- ✅ **会识别**：HTML 邮件正文中通过 `<img src="cid:...">` 引用的内嵌图片
+- ❌ **不会识别**：附件列表中的图片文件（即使是 PNG、JPG 等格式）
+- 📝 **输出格式**：OCR 文本会紧跟在图片引用后，格式为 `**[OCR Content]:** {识别文本}`
+
+### 使用
+
+```python
+from rj_rag_toolkit.parser import MSGParser
+
+# 基本用法
+parser = MSGParser()
+markdown = parser.parse_file("email.msg")
+
+# 保存附件和图片
+parser = MSGParser(
+    save_attachments=True,           # 保存附件
+    attachments_dir="./attachments"  # 指定附件目录
+)
+
+# 启用 OCR
+parser = MSGParser(
+    use_ocr=True,
+    ocr_func=my_ocr_function,
+    image_dpi=300
+)
+```
+
+### 附件保存结构
+
+如未指定 `attachments_dir`，默认在 MSG 文件同目录下创建：
+
+```
+{filename}_attachments/
+├── embedded/     # 邮件内嵌图片（转为 PNG）
+└── files/        # 附件文件
+```
+
 ## PPTX Parser
 
 ### 输入
