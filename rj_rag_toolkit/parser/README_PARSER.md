@@ -28,6 +28,13 @@
 | `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
 | `image_dpi` | int | 300 | 图片 DPI（分辨率） |
 
+### OCR 识别范围
+
+**EML Parser 的 OCR 仅识别邮件正文中的内嵌图片**：
+- ✅ **会识别**：HTML 邮件正文中通过 `<img src="cid:...">` 引用的内嵌图片
+- ❌ **不会识别**：附件列表中的图片文件（即使是 PNG、JPG 等格式）
+- 📝 **输出格式**：OCR 文本会紧跟在图片引用后，格式为 `**[OCR Content]:** {识别文本}`
+
 ### 使用
 
 ```python
@@ -82,6 +89,12 @@ parser = EMLParser(
 | `use_ocr` | bool | False | 是否启用 OCR |
 | `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
 | `image_dpi` | int | 300 | 图片 DPI（分辨率） |
+
+### OCR 识别范围
+
+**PPTX Parser 的 OCR 识别幻灯片中的所有图片**：
+- ✅ **会识别**：所有幻灯片页面中的图片对象
+- 📝 **输出格式**：图片以 Markdown 格式引用，OCR 文本作为图片描述
 
 ### 使用
 
@@ -140,6 +153,12 @@ parser = PPTXParser(
 | `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
 | `image_dpi` | int | 300 | 图片 DPI（分辨率） |
 
+### OCR 识别范围
+
+**DOCX Parser 的 OCR 识别文档正文中的所有图片**：
+- ✅ **会识别**：Word 文档内容中嵌入的所有图片
+- 📝 **输出格式**：图片以 Markdown 格式引用，OCR 文本作为图片描述
+
 ### 使用
 
 ```python
@@ -196,6 +215,13 @@ parser = DOCXParser(
 | `use_ocr` | bool | False | 是否启用 OCR |
 | `ocr_func` | callable | None | OCR 函数，签名: `func(image_path: str) -> str` |
 | `image_dpi` | int | 300 | 图片 DPI（分辨率） |
+
+### OCR 识别范围
+
+**PDF Parser 的 OCR 识别模式**：
+- ✅ **OCR 模式**：将 PDF 每页转换为图片后进行 OCR 识别（适合扫描版 PDF）
+- ❌ **非 OCR 模式**：仅提取 PDF 中的文本和表格，不进行 OCR
+- 📝 **使用场景**：扫描版 PDF、图片型 PDF 需要启用 OCR 模式
 
 ### 使用
 
