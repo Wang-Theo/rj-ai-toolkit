@@ -25,14 +25,14 @@ try:
         PDFParser,
         DOCXParser,
         EMLParser,
+        MSGParser,
         PPTXParser,
-        VectorDBManager,
-        DocumentDBManager,
+        BaseDBManager,
         ChromaManager,
         VectorRetriever,
         HybridRetriever,
         BM25Retriever,
-        BGERanker
+        Reranker
     )
     RAG_AVAILABLE = True
 except ImportError:
@@ -64,17 +64,17 @@ if RAG_AVAILABLE:
         "PDFParser",
         "DOCXParser",
         "EMLParser",
+        "MSGParser",
         "PPTXParser",
         # DB Manager
-        "VectorDBManager",
-        "DocumentDBManager",
+        "BaseDBManager",
         "ChromaManager",
         # Retriever
         "VectorRetriever",
         "HybridRetriever",
         "BM25Retriever",
-        # Ranker
-        "BGERanker"
+        # Reranker
+        "Reranker"
     ])
 
 def get_available_modules():

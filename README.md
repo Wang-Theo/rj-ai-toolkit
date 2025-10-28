@@ -20,13 +20,13 @@ RJ AI Toolkit 是一个企业级AI开发工具包集合，提供了开发智能�
 
 ### 📚 [RAG Toolkit](./rag_toolkit/README.md)
 **检索增强生成工具包**
-- 智能文档切块：递归切块、语义切块等多种策略
-- 多格式文档解析：PDF、DOCX、EML、PPTX等，支持OCR
+- 智能文档切块：递归切块、语义切块、邮件切块、幻灯片切块
+- 多格式文档解析：PDF、DOCX、EML、MSG、PPTX等，支持OCR
 - 统一图片处理：PNG格式，白底无透明，可配置DPI
-- 高效向量检索：基于BGE等先进嵌入模型
+- 高效向量检索：基于ChromaDB的向量存储
 - 混合检索策略：结合向量检索和BM25算法
-- 智能重排序：使用重排序模型提高检索精度
-- 完整的数据库管理：文档库和向量库
+- 通用重排序器：支持任何重排序模型
+- 完整的数据库管理：向量库操作和查询
 
 ## 🚀 快速开始
 
@@ -93,28 +93,37 @@ print(result["output"])
 ### RAG Toolkit 使用示例
 
 ```python
-from rj_rag_toolkit import RAGApi
-from rj_rag_toolkit.chunker import ChunkConfig, ChunkStrategy
+from rj_rag_toolkit import (
+    RecursiveChunker,
+    PDFParser,
+    ChromaManager,
+    VectorRetriever,
+    Reranker
+)
+from rj_rag_toolkit.chunker import ChunkConfig
 
-# 初始化RAG系统
-rag = RAGApi(
-    vector_db_config={
-        "persist_directory": "./vector_db",
-        "collection_name": "my_docs"
-    },
-    chunk_config=ChunkConfig(chunk_size=500, chunk_overlap=50)
+# 初始化组件
+chunk_config = ChunkConfig(chunk_size=500, chunk_overlap=50)
+chunker = RecursiveChunker(chunk_config)
+parser = PDFParser()
+db_manager = ChromaManager(
+    persist_directory="./vector_db",
+    collection_name="my_docs"
 )
 
-# 添加文档
-result = rag.add_document("path/to/document.pdf")
+# 解析和切块
+documents = parser.parse("path/to/document.pdf")
+chunks = []
+for doc in documents:
+    doc_chunks = chunker.chunk_text(doc.page_content, doc.metadata)
+    chunks.extend(doc_chunks)
 
-# 智能搜索
-results = rag.search(
-    query="RAG系统如何工作？",
-    top_k=5,
-    retrieval_method="hybrid",
-    rerank=True
-)
+# 存储到向量数据库
+db_manager.add_documents(chunks)
+
+# 创建检索器并搜索
+retriever = VectorRetriever(db_manager)
+results = retriever.retrieve(query="查询内容", top_k=5)
 
 for result in results:
     print(f"相关度: {result['score']:.3f}")
@@ -194,19 +203,31 @@ HF_ENDPOINT=https://hf-mirror.com  # 国内镜像加速
 ## 🚀 性能优化
 
 ### GPU加速
+
 ```python
 # 启用GPU加速（需要CUDA）
-vector_config = {
-    "embeddings": {
-        "model_kwargs": {"device": "cuda"}
-    }
-}
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer('BAAI/bge-large-zh-v1.5', device='cuda')
+
+# 在ChromaManager中使用
+db = ChromaManager(
+    persist_directory="./chroma_db",
+    embedding_function=model.encode
+)
 ```
 
 ### 批量处理
+
 ```python
 # 批量添加文档
-results = rag.add_documents(file_paths, batch_size=20)
+results = []
+for file_path in file_paths:
+    doc = parser.parse(file_path)
+    results.append(doc)
+
+# 批量存储
+db_manager.add_documents(results)
 ```
 
 ## 🤝 扩展开发

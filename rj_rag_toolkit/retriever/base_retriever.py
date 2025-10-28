@@ -12,75 +12,34 @@ class BaseRetriever(ABC):
     """检索器基类
     
     定义所有检索器必须实现的接口。
+    检索器采用无状态设计，每次检索时传入内容块列表。
     """
-    
-    @abstractmethod
-    def initialize(self) -> bool:
-        """初始化检索器
-        
-        Returns:
-            初始化是否成功
-        """
-        pass
-    
-    @abstractmethod
-    def add_documents(self, documents: List[Dict[str, Any]], **kwargs) -> List[str]:
-        """添加文档到检索器
-        
-        Args:
-            documents: 文档列表
-            **kwargs: 其他参数
-            
-        Returns:
-            文档ID列表
-        """
-        pass
     
     @abstractmethod
     def retrieve(self, 
                 query: str,
+                chunks: List[Dict[str, Any]],
                 top_k: int = 10,
+                min_score: Optional[float] = None,
                 **kwargs) -> List[Dict[str, Any]]:
-        """检索相关文档
+        """检索相关内容块
         
         Args:
             query: 查询文本
+            chunks: 内容块列表，每个块包含:
+                - content: 文本内容 (必需)
+                - metadata: 元数据（可选）
+                - id: 块ID（可选）
             top_k: 返回结果数量
+            min_score: 最小相关性分数阈值（可选）
             **kwargs: 其他参数
             
         Returns:
-            检索结果列表
-        """
-        pass
-    
-    @abstractmethod
-    def delete_documents(self, document_ids: List[str], **kwargs) -> bool:
-        """删除文档
-        
-        Args:
-            document_ids: 文档ID列表
-            **kwargs: 其他参数
-            
-        Returns:
-            删除是否成功
-        """
-        pass
-    
-    @abstractmethod
-    def clear(self) -> bool:
-        """清空所有文档
-        
-        Returns:
-            清空是否成功
-        """
-        pass
-    
-    @abstractmethod
-    def count(self) -> int:
-        """获取文档数量
-        
-        Returns:
-            文档数量
+            检索结果列表，每个结果包含:
+                - content: 内容块文本
+                - score: 相关性分数
+                - metadata: 元数据（如果输入中有）
+                - id: 块ID（如果输入中有）
         """
         pass
 

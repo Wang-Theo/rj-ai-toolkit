@@ -1,246 +1,307 @@
 """
 混合检索器
 
-结合向量检索和关键字检索的混合策略。
+结合BM25检索和向量检索的混合策略。
+无状态设计，每次检索时传入内容块列表。
 """
 
 from typing import List, Dict, Any, Optional
-from langchain_core.documents import Document
-import numpy as np
 from .base_retriever import BaseRetriever
-
-try:
-    from langchain_community.retrievers import BM25Retriever
-    BM25_AVAILABLE = True
-except ImportError:
-    BM25_AVAILABLE = False
+from .bm25_retriever import BM25Retriever
+from .vector_retriever import VectorRetriever
 
 
 class HybridRetriever(BaseRetriever):
-    """混合检索器 - 结合向量检索和BM25检索"""
+    """混合检索器
+    
+    结合BM25和向量检索，使用加权融合策略。
+    """
     
     def __init__(
         self, 
-        vector_db_manager,
-        config: Optional[Dict[str, Any]] = None,
+        bm25_retriever: BM25Retriever,
+        vector_retriever: VectorRetriever,
         bm25_weight: float = 0.5,
-        vector_weight: float = 0.5
+        vector_weight: float = 0.5,
+        fusion_method: str = 'weighted',
+        rrf_k: int = 60
     ):
-        """
-        初始化混合检索器
+        """初始化混合检索器
         
         Args:
-            vector_db_manager: 向量数据库管理器
-            config: 配置参数
-            bm25_weight: BM25检索权重
-            vector_weight: 向量检索权重
+            bm25_retriever: BM25检索器实例
+            vector_retriever: 向量检索器实例
+            bm25_weight: BM25检索权重 (默认: 0.5)
+            vector_weight: 向量检索权重 (默认: 0.5)
+            fusion_method: 融合方法 ('weighted' 或 'rrf'，默认: 'weighted')
+            rrf_k: RRF参数k (默认: 60)
         """
-        super().__init__(config)
-        self.vector_db = vector_db_manager
-        self.bm25_weight = bm25_weight
-        self.vector_weight = vector_weight
-        self.bm25_retriever = None
-        self.documents = []  # 存储文档用于BM25
+        self.bm25_retriever = bm25_retriever
+        self.vector_retriever = vector_retriever
         
-        # 确保权重总和为1
+        # 归一化权重
         total_weight = bm25_weight + vector_weight
         self.bm25_weight = bm25_weight / total_weight
         self.vector_weight = vector_weight / total_weight
-    
-    def initialize(self) -> bool:
-        """初始化检索器"""
-        try:
-            if hasattr(self.vector_db, 'connect'):
-                self.is_initialized = self.vector_db.connect()
-            else:
-                self.is_initialized = True
-            return self.is_initialized
-        except Exception as e:
-            print(f"初始化混合检索器失败: {str(e)}")
-            self.is_initialized = False
-            return False
-    
-    def add_documents(self, documents: List[Dict[str, Any]], **kwargs) -> List[str]:
-        """添加文档到检索器"""
-        # 添加到向量数据库
-        collection_name = kwargs.get('collection_name', 'default')
-        result_ids = self.vector_db.add_documents(collection_name, documents, **kwargs)
         
-        # 转换为LangChain Document格式并存储用于BM25
-        for doc in documents:
-            langchain_doc = Document(
-                page_content=doc.get('content', ''),
-                metadata=doc.get('metadata', {})
-            )
-            self.documents.append(langchain_doc)
-        
-        # 重建BM25检索器
-        self._build_bm25_retriever()
-        
-        return result_ids
-    
-    def _build_bm25_retriever(self) -> None:
-        """构建BM25检索器"""
-        if BM25_AVAILABLE and self.documents:
-            try:
-                texts = [doc.page_content for doc in self.documents]
-                metadatas = [doc.metadata for doc in self.documents]
-                self.bm25_retriever = BM25Retriever.from_texts(texts, metadatas=metadatas)
-            except Exception as e:
-                print(f"构建BM25检索器失败: {str(e)}")
-                self.bm25_retriever = None
+        # 融合方法
+        self.fusion_method = fusion_method
+        self.rrf_k = rrf_k
     
     def retrieve(self, 
                 query: str,
+                chunks: List[Dict[str, Any]],
                 top_k: int = 10,
+                min_score: Optional[float] = None,
                 **kwargs) -> List[Dict[str, Any]]:
-        """混合检索策略"""
+        """使用混合策略检索相关内容块
+        
+        Args:
+            query: 查询文本
+            chunks: 内容块列表，每个块包含:
+                - content: 文本内容
+                - metadata: 元数据（可选）
+                - id: 块ID（可选）
+            top_k: 返回结果数量
+            min_score: 最小相关性分数阈值（可选）
+            **kwargs: 其他参数
+                
+        Returns:
+            检索结果列表
+        """
+        if not chunks:
+            return []
+        
         try:
-            # 向量检索
-            collection_name = kwargs.get('collection_name', 'default')
-            vector_results = self.vector_db.search(collection_name, query, top_k * 2, **kwargs)
-            
             # BM25检索
-            bm25_results = []
-            if self.bm25_retriever:
-                try:
-                    bm25_docs = self.bm25_retriever.get_relevant_documents(query)[:top_k * 2]
-                    bm25_results = [
-                        {
-                            'content': doc.page_content,
-                            'metadata': doc.metadata,
-                            'score': 1.0  # BM25没有直接的分数，使用固定值
-                        }
-                        for doc in bm25_docs
-                    ]
-                except Exception as e:
-                    print(f"BM25检索失败: {str(e)}")
+            bm25_results = self.bm25_retriever.retrieve(
+                query=query,
+                chunks=chunks,
+                top_k=top_k * 2,  # 获取更多结果用于融合
+                min_score=None,
+                **kwargs
+            )
             
-            # 合并和重排序结果
-            combined_results = self._combine_results(vector_results, bm25_results, top_k)
+            # 向量检索
+            vector_results = self.vector_retriever.retrieve(
+                query=query,
+                chunks=chunks,
+                top_k=top_k * 2,
+                min_score=None,
+                **kwargs
+            )
             
-            return combined_results
+            # 融合结果
+            if self.fusion_method == 'rrf':
+                combined_results = self._rrf_fusion(bm25_results, vector_results, top_k)
+            else:  # weighted
+                combined_results = self._weighted_fusion(bm25_results, vector_results, top_k)
+            
+            # 应用最小分数阈值
+            if min_score is not None:
+                combined_results = [r for r in combined_results if r['score'] >= min_score]
+            
+            return combined_results[:top_k]
             
         except Exception as e:
             print(f"混合检索失败: {str(e)}")
-            # 如果混合检索失败，至少返回向量检索结果
+            # 失败时尝试返回向量检索结果
             try:
-                collection_name = kwargs.get('collection_name', 'default')
-                return self.vector_db.search(collection_name, query, top_k, **kwargs)
+                return self.vector_retriever.retrieve(query, chunks, top_k, min_score, **kwargs)
             except:
                 return []
     
-    def _combine_results(self, 
-                        vector_results: List[Dict[str, Any]], 
+    def _weighted_fusion(self, 
                         bm25_results: List[Dict[str, Any]], 
+                        vector_results: List[Dict[str, Any]], 
                         top_k: int) -> List[Dict[str, Any]]:
-        """合并和重排序结果"""
+        """加权融合策略
+        
+        Args:
+            bm25_results: BM25检索结果
+            vector_results: 向量检索结果
+            top_k: 返回结果数量
+            
+        Returns:
+            融合后的结果列表
+        """
+        # 归一化分数
+        bm25_scores_norm = self._normalize_scores(bm25_results)
+        vector_scores_norm = self._normalize_scores(vector_results)
+        
         # 创建内容到结果的映射
         content_to_result = {}
         
-        # 处理向量检索结果
-        for result in vector_results:
+        # 处理BM25结果
+        for i, result in enumerate(bm25_results):
             content = result.get('content', '')
             if content:
                 content_to_result[content] = {
                     'content': content,
-                    'metadata': result.get('metadata', {}),
-                    'vector_score': result.get('score', 0.0),
-                    'bm25_score': 0.0
+                    'bm25_score': bm25_scores_norm[i],
+                    'vector_score': 0.0
                 }
+                # 保留metadata和id（如果有）
+                if 'metadata' in result:
+                    content_to_result[content]['metadata'] = result['metadata']
+                if 'id' in result:
+                    content_to_result[content]['id'] = result['id']
         
-        # 处理BM25检索结果
-        for result in bm25_results:
+        # 处理向量检索结果
+        for i, result in enumerate(vector_results):
             content = result.get('content', '')
             if content in content_to_result:
-                content_to_result[content]['bm25_score'] = result.get('score', 0.0)
+                content_to_result[content]['vector_score'] = vector_scores_norm[i]
             elif content:
                 content_to_result[content] = {
                     'content': content,
-                    'metadata': result.get('metadata', {}),
-                    'vector_score': 0.0,
-                    'bm25_score': result.get('score', 0.0)
+                    'bm25_score': 0.0,
+                    'vector_score': vector_scores_norm[i]
                 }
+                # 保留metadata和id（如果有）
+                if 'metadata' in result:
+                    content_to_result[content]['metadata'] = result['metadata']
+                if 'id' in result:
+                    content_to_result[content]['id'] = result['id']
         
-        # 计算组合分数
+        # 计算加权分数
         combined_results = []
-        for result in content_to_result.values():
+        for item in content_to_result.values():
             combined_score = (
-                self.vector_weight * result['vector_score'] + 
-                self.bm25_weight * result['bm25_score']
+                self.bm25_weight * item['bm25_score'] + 
+                self.vector_weight * item['vector_score']
             )
             
-            combined_results.append({
-                'content': result['content'],
-                'metadata': result['metadata'],
-                'score': combined_score,
-                'vector_score': result['vector_score'],
-                'bm25_score': result['bm25_score']
-            })
+            result = {
+                'content': item['content'],
+                'score': combined_score
+            }
+            
+            # 如果有metadata，添加到结果中
+            if 'metadata' in item:
+                result['metadata'] = item['metadata']
+            
+            # 如果有ID，添加到结果中
+            if 'id' in item:
+                result['id'] = item['id']
+            
+            combined_results.append(result)
         
-        # 按组合分数排序
+        # 按分数排序
         combined_results.sort(key=lambda x: x['score'], reverse=True)
         
         return combined_results[:top_k]
     
-    def update_documents(self, documents: List[Dict[str, Any]], **kwargs) -> bool:
-        """更新文档"""
-        try:
-            # 更新向量数据库
-            collection_name = kwargs.get('collection_name', 'default')
-            vector_updated = self.vector_db.update_documents(collection_name, documents, **kwargs)
+    def _rrf_fusion(self, 
+                   bm25_results: List[Dict[str, Any]], 
+                   vector_results: List[Dict[str, Any]], 
+                   top_k: int) -> List[Dict[str, Any]]:
+        """倒数排名融合(Reciprocal Rank Fusion)策略
+        
+        Args:
+            bm25_results: BM25检索结果
+            vector_results: 向量检索结果
+            top_k: 返回结果数量
             
-            # 重建BM25索引（简单方法：清空重建）
-            self.clear()
-            self.add_documents(documents, **kwargs)
+        Returns:
+            融合后的结果列表
+        """
+        # 创建内容到结果的映射
+        content_to_result = {}
+        
+        # 处理BM25结果
+        for rank, result in enumerate(bm25_results):
+            content = result.get('content', '')
+            if content:
+                rrf_score = 1.0 / (self.rrf_k + rank + 1)
+                content_to_result[content] = {
+                    'content': content,
+                    'bm25_rrf': rrf_score,
+                    'vector_rrf': 0.0
+                }
+                # 保留metadata和id（如果有）
+                if 'metadata' in result:
+                    content_to_result[content]['metadata'] = result['metadata']
+                if 'id' in result:
+                    content_to_result[content]['id'] = result['id']
+        
+        # 处理向量检索结果
+        for rank, result in enumerate(vector_results):
+            content = result.get('content', '')
+            rrf_score = 1.0 / (self.rrf_k + rank + 1)
             
-            return vector_updated
-        except Exception as e:
-            print(f"更新文档失败: {str(e)}")
-            return False
+            if content in content_to_result:
+                content_to_result[content]['vector_rrf'] = rrf_score
+            elif content:
+                content_to_result[content] = {
+                    'content': content,
+                    'bm25_rrf': 0.0,
+                    'vector_rrf': rrf_score
+                }
+                # 保留metadata和id（如果有）
+                if 'metadata' in result:
+                    content_to_result[content]['metadata'] = result['metadata']
+                if 'id' in result:
+                    content_to_result[content]['id'] = result['id']
+        
+        # 计算RRF分数
+        combined_results = []
+        for item in content_to_result.values():
+            rrf_score = item['bm25_rrf'] + item['vector_rrf']
+            
+            result = {
+                'content': item['content'],
+                'score': rrf_score
+            }
+            
+            # 如果有metadata，添加到结果中
+            if 'metadata' in item:
+                result['metadata'] = item['metadata']
+            
+            # 如果有ID，添加到结果中
+            if 'id' in item:
+                result['id'] = item['id']
+            
+            combined_results.append(result)
+        
+        # 按RRF分数排序
+        combined_results.sort(key=lambda x: x['score'], reverse=True)
+        
+        return combined_results[:top_k]
     
-    def delete_documents(self, document_ids: List[str], **kwargs) -> bool:
-        """删除文档"""
-        try:
-            # 从向量数据库删除
-            collection_name = kwargs.get('collection_name', 'default')
-            vector_deleted = self.vector_db.delete_documents(collection_name, document_ids, **kwargs)
+    def _normalize_scores(self, results: List[Dict[str, Any]]) -> List[float]:
+        """归一化分数到[0, 1]范围
+        
+        Args:
+            results: 检索结果列表
             
-            # 从本地文档列表删除（通过内容匹配，这是一个简化的实现）
-            # 在实际应用中，应该有更好的ID管理机制
-            self.documents = [doc for doc in self.documents 
-                            if doc.metadata.get('id') not in document_ids]
-            
-            # 重建BM25检索器
-            self._build_bm25_retriever()
-            
-            return vector_deleted
-        except Exception as e:
-            print(f"删除文档失败: {str(e)}")
-            return False
-    
-    def clear(self) -> bool:
-        """清空所有文档"""
-        try:
-            # 清空向量数据库
-            vector_cleared = self.vector_db.clear()
-            
-            # 清空本地文档和BM25检索器
-            self.documents.clear()
-            self.bm25_retriever = None
-            
-            return vector_cleared
-        except Exception as e:
-            print(f"清空文档失败: {str(e)}")
-            return False
-    
-    def count(self) -> int:
-        """获取文档数量"""
-        collection_name = self.config.get('collection_name', 'default')
-        return self.vector_db.count(collection_name)
+        Returns:
+            归一化后的分数列表
+        """
+        if not results:
+            return []
+        
+        scores = [r.get('score', 0.0) for r in results]
+        
+        min_score = min(scores)
+        max_score = max(scores)
+        
+        # 避免除以零
+        if max_score == min_score:
+            return [1.0] * len(scores)
+        
+        # Min-Max归一化
+        normalized = [(s - min_score) / (max_score - min_score) for s in scores]
+        
+        return normalized
     
     def set_weights(self, bm25_weight: float, vector_weight: float):
-        """动态调整权重"""
+        """动态调整权重
+        
+        Args:
+            bm25_weight: BM25权重
+            vector_weight: 向量权重
+        """
         total_weight = bm25_weight + vector_weight
         self.bm25_weight = bm25_weight / total_weight
         self.vector_weight = vector_weight / total_weight
