@@ -1,18 +1,18 @@
 """
 RJ AI Toolkit
 
-企业级AI工具包集合，包含Agent、RAG等多种AI开发工具。
+企业级AI工具包集合，包含Model Clients、RAG等多种AI开发工具。
 
 Author: Renjie Wang
 Version: 0.1.0
 """
 
-# Agent Toolkit
-from .rj_agent_toolkit import (
-    EnterpriseAgent, 
-    Config,
-    create_calculator_tool,
-    create_text_analyzer_tool
+# Model Clients
+from .rj_agent_toolkit.model_clients import (
+    call_ollama_llm,
+    call_qwen_llm_api,
+    get_ollama_embedding,
+    call_ollama_ocr
 )
 
 # RAG Toolkit
@@ -45,11 +45,11 @@ __description__ = "RJ AI Toolkit - 企业级AI工具包集合"
 
 # 导出列表
 __all__ = [
-    # Agent模块
-    "EnterpriseAgent",
-    "Config", 
-    "create_calculator_tool",
-    "create_text_analyzer_tool"
+    # Model Clients
+    "call_ollama_llm",
+    "call_qwen_llm_api",
+    "get_ollama_embedding",
+    "call_ollama_ocr"
 ]
 
 # 如果RAG模块可用，添加到导出列表

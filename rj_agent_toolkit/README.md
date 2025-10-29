@@ -1,269 +1,222 @@
-# Agent Toolkit
+# Model Clients
 
-🤖 **企业级智能对话代理工具包** - 基于LangChain框架的智能Agent开发工具
+🔌 **统一模型调用接口** - 提供简洁一致的AI模型调用方式
 
 [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![LangChain](https://img.shields.io/badge/LangChain-0.3+-green.svg)](https://github.com/langchain-ai/langchain)
 
 ## ✨ 核心特性
 
-- **🧠 智能Agent**: 基于LangChain框架的企业级智能对话代理
-- **🔌 千问模型**: 深度集成阿里云千问大模型API
-- **🛠️ 丰富工具**: 内置计算器、文本分析、情感分析等多种工具
-- **🔧 易扩展**: 简单的接口设计，方便添加自定义工具
-- **💾 记忆功能**: 支持对话历史记忆和上下文管理
-- **📝 完整日志**: 详细的执行日志和错误处理
+- **� LLM模型**: 支持Ollama本地部署和通义千问API
+- **� Embedding模型**: 文本向量化，支持多种embedding模型
+- **�️ OCR模型**: 图像文字识别，支持表格识别
+- **⚙️ 灵活配置**: 所有模型可自定义选择，无硬编码
+- **� 统一接口**: 简洁一致的API设计
 
 ## 🚀 快速开始
 
-### 1. 环境配置
+### 安装
+
 ```bash
-# 设置千问API密钥
+pip install git+https://github.com/Wang-Theo/rj-ai-toolkit.git
+```
+
+### 基本使用
+
+```python
+from rj_agent_toolkit.model_clients import (
+    call_ollama_llm,
+    get_ollama_embedding,
+    call_ollama_ocr
+)
+
+# 调用本地LLM
+response = call_ollama_llm(
+    system_prompt="你是一个专业助手",
+    user_input="什么是机器学习？",
+    model="qwen3:8b"
+)
+
+# 文本向量化
+vector = get_ollama_embedding(
+    text="这是一段测试文本",
+    model="bge-m3:latest"
+)
+
+# 图片文字识别
+text = call_ollama_ocr(
+    image_path="document.png",
+    model="qwen2.5vl:7b"
+)
+```
+
+## 📚 详细文档
+
+详细使用说明请查看：[Model Clients 完整文档](./model_clients/README.md)
+
+## 🛠️ 功能模块
+
+### LLM 模型
+
+- **call_ollama_llm**: 调用本地 Ollama 部署的大语言模型
+- **call_qwen_llm_api**: 调用通义千问 API
+
+### Embedding 模型
+
+- **get_ollama_embedding**: 文本向量化
+
+### OCR 模型
+
+- **call_ollama_ocr**: 图片文字识别
+
+## 🔧 环境配置
+
+### Ollama 服务
+
+```bash
+# 启动 Ollama 服务
+ollama serve
+
+# 拉取所需模型
+ollama pull qwen3:8b
+ollama pull bge-m3:latest
+ollama pull qwen2.5vl:7b
+```
+
+### 通义千问 API
+
+```bash
 # Windows
-set DASHSCOPE_API_KEY=your_api_key_here
+set DASHSCOPE_API_KEY=your-api-key
 
 # Linux/Mac
-export DASHSCOPE_API_KEY=your_api_key_here
+export DASHSCOPE_API_KEY=your-api-key
 ```
 
-### 2. 基本使用
+## � 使用示例
+
+### LLM 模型调用
+
 ```python
-from rj_agent_toolkit import EnterpriseAgent, Config
-from rj_agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
+from rj_agent_toolkit.model_clients import call_ollama_llm
 
-# 创建配置
-config = Config()
-
-# 创建Agent
-agent = EnterpriseAgent(config)
-
-# 添加工具
-agent.add_tool(create_calculator_tool())
-agent.add_tool(create_text_analyzer_tool())
-
-# 构建Agent
-agent.build_agent()
-
-# 运行查询
-result = agent.run("请帮我计算 (25 + 35) * 2 的结果")
-print(result["output"])
-```
-
-### 3. 高级配置
-```python
-from rj_agent_toolkit import Config, EnterpriseAgent
-from rj_agent_toolkit.tools import *
-
-# 自定义配置
-config = Config(
-    LLM_MODEL="qwen-plus",      # 指定模型
-    LLM_TEMPERATURE=0.3,        # 调整创造性
-    MAX_ITERATIONS=5,           # 限制迭代次数
-    MAX_TOKENS=4000            # 控制响应长度
+response = call_ollama_llm(
+    system_prompt="你是一个编程助手",
+    user_input="如何使用Python读取文件？",
+    model="qwen3:8b",
+    temperature=0.7
 )
-
-agent = EnterpriseAgent(config)
-
-# 批量添加工具
-agent.add_tools([
-    create_calculator_tool(),
-    create_text_analyzer_tool(),
-    create_text_sentiment_tool()
-])
-
-agent.build_agent()
+print(response)
 ```
 
-### 4. 行为配置
+### 文本向量化
+
 ```python
-# 生产环境 - 静默模式
-production_config = Config(
-    VERBOSE=False,                      # 不显示执行过程
-    RETURN_INTERMEDIATE_STEPS=False,    # 不返回中间步骤
-    MAX_ITERATIONS=3                    # 快速响应
+from rj_agent_toolkit.model_clients import get_ollama_embedding
+
+# 单个文本向量化
+vector = get_ollama_embedding(
+    text="这是一段测试文本",
+    model="bge-m3:latest"
 )
+print(f"向量维度: {len(vector)}")
 
-# 开发环境 - 调试模式  
-debug_config = Config(
-    VERBOSE=True,                       # 显示详细过程
-    RETURN_INTERMEDIATE_STEPS=True,     # 返回所有步骤
-    MAX_ITERATIONS=15                   # 允许复杂推理
-)
-```
-
-## 🛠️ 内置工具
-
-### 计算器工具
-支持基本数学运算：加减乘除、括号
-
-```python
-result = agent.run("计算 (10 + 20) * 3")
-```
-
-### 文本分析工具
-分析文本的统计信息和情感
-
-```python
-result = agent.run("分析这段文本：人工智能正在改变世界")
-```
-
-## 🔧 自定义工具
-
-创建自定义工具非常简单：
-
-```python
-from langchain_core.tools import Tool
-
-def create_my_tool():
-    def my_function(input_text: str) -> str:
-        return f"处理结果: {input_text.upper()}"
-    
-    return Tool(
-        name="my_tool",
-        description="将文本转换为大写",
-        func=my_function
-    )
-
-# 使用自定义工具
-agent.add_tool(create_my_tool())
-```
-
-## 🎨 自定义Agent模板
-
-Agent支持自定义提示模板，让您可以定制Agent的行为和回答风格：
-
-### 默认模板
-Agent使用标准的ReAct（Reasoning + Acting）模板，包含思考、行动、观察的循环。
-
-### 自定义模板示例
-
-```python
-# 创建友好的客服风格模板
-customer_service_template = """你是一个友好专业的AI助手。请根据以下工具帮助用户解决问题：
-
-可用工具：
-{tools}
-
-请使用以下格式回答：
-
-用户问题：{input}
-思考：分析用户需求，选择合适的工具
-行动：[选择工具名称: {tool_names}]
-行动输入：工具的具体参数
-观察：工具返回的结果
-思考：基于结果进行进一步分析
-最终回答：给用户的友好完整回答
-
-开始对话：
-{agent_scratchpad}"""
-
-# 使用自定义模板构建Agent
-agent.build_agent(custom_prompt=customer_service_template)
-```
-
-## 📊 使用示例
-
-### 批量任务处理
-```python
-queries = [
-    "计算 2^10 的值",
-    "分析文本：AI技术发展迅速，带来新机遇"
+# 批量向量化
+texts = ["文本1", "文本2", "文本3"]
+vectors = [
+    get_ollama_embedding(text, model="bge-m3:latest") 
+    for text in texts
 ]
-
-for query in queries:
-    result = agent.run(query)
-    print(f"查询: {query}")
-    print(f"结果: {result['output']}\n")
 ```
 
-### 复杂对话
+### OCR 识别
+
 ```python
-# Agent会记住对话历史
-agent.run("我想计算一些数学题")
-agent.run("帮我算 15 * 8")
-agent.run("再加上 32")  # Agent会理解上下文
-```
+from rj_agent_toolkit.model_clients import call_ollama_ocr
 
-### 运行示例
-```bash
-# 完整功能演示
-python examples/agent_examples/complete_example.py
+# 基本使用
+text = call_ollama_ocr(
+    image_path="document.png",
+    model="qwen2.5vl:7b"
+)
+
+# 自定义提示词
+custom_prompt = "请提取图片中的所有中文文字，保持原始格式"
+text = call_ollama_ocr(
+    image_path="chinese_doc.jpg",
+    model="qwen2.5vl:7b",
+    prompt=custom_prompt
+)
 ```
 
 ## 🔍 API 参考
 
-### EnterpriseAgent
+### call_ollama_llm
 
-主要的 Agent 类，提供智能对话能力。
+调用本地 Ollama 部署的大语言模型
 
-#### 方法
-- `add_tool(tool)`: 添加单个工具
-- `add_tools(tools)`: 批量添加工具  
-- `remove_tool(name)`: 移除指定工具
-- `list_tools()`: 获取工具列表
-- `build_agent(custom_prompt=None)`: 构建Agent执行器，支持自定义提示模板
-- `run(query)`: 执行查询
-- `reset_memory()`: 重置对话记忆
-- `get_memory_summary()`: 获取记忆摘要
-- `export_config()`: 导出配置信息
+**参数:**
+- `system_prompt` (str): 系统提示词
+- `user_input` (str): 用户输入
+- `model` (str): 模型名称 **必填**
+- `base_url` (str): Ollama服务地址，默认 "http://localhost:11434/v1"
+- `temperature` (float): 温度参数，默认 0.01
 
-### Config
+**返回:** `str` - 模型回复
 
-配置类，用于设置模型和行为参数。
+### get_ollama_embedding
 
-#### 主要属性
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| DASHSCOPE_API_KEY | str | None | 阿里云API密钥 |
-| BASE_URL | str | https://dashscope.aliyuncs.com/compatible-mode/v1 | API基础URL |
-| LLM_MODEL | str | qwen-max | 模型名称 |
-| LLM_TEMPERATURE | float | 0.01 | 温度参数(0-1) |
-| MAX_TOKENS | int | 8000 | 最大token数 |
-| MAX_ITERATIONS | int | 10 | 最大迭代次数 |
-| MEMORY_K | int | 10 | 保留对话轮数 |
-| VERBOSE | bool | True | 是否显示详细执行过程 |
-| RETURN_INTERMEDIATE_STEPS | bool | True | 是否返回中间步骤 |
-| HANDLE_PARSING_ERRORS | bool | True | 是否处理解析错误 |
+文本向量化
 
-## 🚀 支持的模型
+**参数:**
+- `text` (str): 需要转换的文本
+- `model` (str): embedding模型名称 **必填**
+- `base_url` (str): Ollama服务地址，默认 "http://localhost:11434"
 
-支持阿里云千问系列所有模型：
-- qwen-turbo
-- qwen-plus  
-- qwen-max
-- qwen-max-longcontext
+**返回:** `List[float]` - 文本向量
 
-详细模型列表请参考：https://help.aliyun.com/zh/model-studio/getting-started/models
+### call_ollama_ocr
+
+图片文字识别
+
+**参数:**
+- `image_path` (str): 图片路径
+- `model` (str): OCR模型名称 **必填**
+- `base_url` (str): Ollama服务地址，默认 "http://localhost:11434"
+- `prompt` (str): 自定义提示词，默认 None
+
+**返回:** `str` - 识别的文字
 
 ## ⚠️ 注意事项
 
-1. 确保已设置正确的API密钥
-2. 网络需要能够访问阿里云API
-3. 根据使用量合理设置MAX_TOKENS避免超额
-4. 自定义工具需要合理处理异常情况
+1. **模型参数必填**: 所有函数的 `model` 参数都是必填的
+2. **服务地址**: 默认使用本地 Ollama 服务
+3. **API Key**: 通义千问 API 需要有效的 API Key
+4. **模型兼容性**: 确保指定的模型已下载或可用
 
-## 🐛 故障排除
+## 🚀 完整示例
 
-### 常见错误
+```bash
+# 运行完整示例
+python examples/model_clients_demo.py
+```
 
-1. **API密钥错误**
-   ```
-   请设置DASHSCOPE_API_KEY环境变量或在配置中提供API密钥
-   ```
-   解决：检查环境变量设置
+## � 支持的模型
 
-2. **网络连接问题**
-   ```
-   Connection error
-   ```
-   解决：检查网络连接和防火墙设置
+### Ollama 本地模型
+- **LLM**: qwen3:8b, llama3:8b, mistral等
+- **Embedding**: bge-m3:latest, nomic-embed-text等
+- **OCR**: qwen2.5vl:7b, llava:13b等
 
-3. **模型调用失败**
-   ```
-   Model not found
-   ```
-   解决：检查模型名称是否正确
+### 通义千问 API
+- qwen-max
+- qwen-plus
+- qwen-turbo
+
+详细模型列表请参考：
+- [Ollama 模型库](https://ollama.com/library)
+- [通义千问模型](https://help.aliyun.com/zh/model-studio/getting-started/models)
 
 ---
 
-**Agent Toolkit** - 让AI Agent开发更简单 🚀
+**Model Clients** - 让AI模型调用更简单 🚀

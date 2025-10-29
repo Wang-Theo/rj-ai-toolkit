@@ -1,28 +1,32 @@
 """
 RJ AI Toolkit - Agent Module
 
-企业级LangChain Agent开发工具包，是RJ AI Toolkit的一部分。
-提供智能对话代理、工具集成和企业级功能。
+企业级AI模型客户端工具包，是RJ AI Toolkit的一部分。
+提供统一的模型调用接口，包括LLM、Embedding和OCR模型。
 
 Author: Renjie Wang
 Version: 0.1.0
 """
 
-from .core.agent import EnterpriseAgent
-from .core.config import Config
-from .tools.calculator import create_calculator_tool
-from .tools.text_analyzer import create_text_analyzer_tool
+# Model Clients imports
+from .model_clients import (
+    call_ollama_llm,
+    call_qwen_llm_api,
+    get_ollama_embedding,
+    call_ollama_ocr
+)
 
 __version__ = "0.1.0"
 __author__ = "Renjie Wang"
 __email__ = "renjiewang31@gmail.com"
-__description__ = "RJ AI Toolkit - Agent模块"
+__description__ = "RJ AI Toolkit - Agent模块（模型客户端）"
 
 __all__ = [
-    "EnterpriseAgent",
-    "Config", 
-    "create_calculator_tool",
-    "create_text_analyzer_tool"
+    # Model Clients exports
+    "call_ollama_llm",
+    "call_qwen_llm_api",
+    "get_ollama_embedding",
+    "call_ollama_ocr"
 ]
 
 # 包级别的配置

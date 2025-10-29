@@ -10,15 +10,15 @@
 
 RJ AI Toolkit 是一个企业级AI开发工具包集合，提供了开发智能应用所需的核心组件。每个工具包都可以独立使用，也可以组合使用来构建复杂的AI应用。
 
-### 🤖 [Agent Toolkit](./agent_toolkit/README.md)
-**智能对话代理工具包**
-- 基于LangChain框架的企业级智能对话代理
-- 深度集成阿里云千问大模型API
-- 内置丰富工具：计算器、文本分析、情感分析等
-- 支持自定义工具和Agent模板
-- 完整的对话记忆和上下文管理
+### 🔌 [Model Clients](./rj_agent_toolkit/README.md)
+**统一模型调用接口**
+- **LLM模型**: 支持Ollama本地部署、通义千问API
+- **Embedding模型**: 文本向量化，支持多种embedding模型
+- **OCR模型**: 图像文字识别，支持表格识别
+- **灵活配置**: 所有模型可自定义选择，无硬编码
+- **统一接口**: 简洁一致的API设计
 
-### 📚 [RAG Toolkit](./rag_toolkit/README.md)
+### 📚 [RAG Toolkit](./rj_rag_toolkit/README.md)
 **检索增强生成工具包**
 - 智能文档切块：递归切块、语义切块、邮件切块、幻灯片切块
 - 多格式文档解析：PDF、DOCX、EML、MSG、PPTX等，支持OCR
@@ -65,29 +65,35 @@ pip install -e .
 pip install -r requirements.txt
 ```
 
-### Agent Toolkit 使用示例
+### 基本安装与使用
+
+### Model Clients 使用示例
 
 ```python
-from rj_agent_toolkit import EnterpriseAgent, Config
-from rj_agent_toolkit.tools import create_calculator_tool, create_text_analyzer_tool
+from rj_agent_toolkit.model_clients import (
+    call_ollama_llm,
+    get_ollama_embedding,
+    call_ollama_ocr
+)
 
-# 设置环境变量
-# set DASHSCOPE_API_KEY=your_api_key_here
+# 调用本地LLM
+response = call_ollama_llm(
+    system_prompt="你是一个专业助手",
+    user_input="什么是机器学习？",
+    model="qwen3:8b"
+)
 
-# 创建Agent
-config = Config()
-agent = EnterpriseAgent(config)
+# 文本向量化
+vector = get_ollama_embedding(
+    text="这是一段测试文本",
+    model="bge-m3:latest"
+)
 
-# 添加工具
-agent.add_tools([
-    create_calculator_tool(),
-    create_text_analyzer_tool()
-])
-
-# 构建并运行
-agent.build_agent()
-result = agent.run("请帮我计算 (25 + 35) * 2 并分析结果")
-print(result["output"])
+# 图片文字识别
+text = call_ollama_ocr(
+    image_path="document.png",
+    model="qwen2.5vl:7b"
+)
 ```
 
 ### RAG Toolkit 使用示例
@@ -132,15 +138,16 @@ for result in results:
 
 ## 📖 详细文档
 
-- **[Agent Toolkit 详细文档](./agent_toolkit/README.md)** - 智能对话代理的完整使用指南
-- **[RAG Toolkit 详细文档](./rag_toolkit/README.md)** - 检索增强生成系统的详细说明
+- **[Model Clients 详细文档](./rj_agent_toolkit/README.md)** - 模型调用接口的使用说明
+  - [完整 API 文档](./rj_agent_toolkit/model_clients/README.md)
+- **[RAG Toolkit 详细文档](./rj_rag_toolkit/README.md)** - 检索增强生成系统的详细说明
 
 ## 🔧 示例代码
 
-### Agent 示例
+### Model Clients 示例
 ```bash
-# Agent完整功能演示
-python examples/agent_examples/complete_example.py
+# Model Clients 完整功能演示
+python examples/model_clients_demo.py
 ```
 
 ### RAG 示例
@@ -158,17 +165,21 @@ python examples/rag_examples/complete_rag_demo.py
 rj-ai-toolkit/
 ├── rj_agent_toolkit/              # 🤖 智能对话代理工具包
 │   ├── README.md                  # Agent文档
+│   ├── model_clients/             # 🔌 模型客户端
+│   │   ├── README.md              # Model Clients文档
+│   │   ├── llm.py                 # LLM模型接口
+│   │   ├── embedding.py           # Embedding模型接口
+│   │   └── ocr.py                 # OCR模型接口
 │   ├── core/                      # 核心模块
 │   ├── tools/                     # 内置工具
 │   └── utils/                     # 实用工具
 ├── rj_rag_toolkit/                # 📚 检索增强生成工具包
 │   ├── README.md                  # RAG文档
-│   ├── api.py                     # 统一API接口
 │   ├── chunker/                   # 文档切块器
 │   ├── parser/                    # 文档解析器
 │   ├── db_manager/                # 数据库管理器
 │   ├── retriever/                 # 检索器
-│   └── ranker/                    # 重排序器
+│   └── reranker/                  # 重排序器
 ├── examples/                      # 📝 使用示例
 │   ├── agent_examples/            # Agent示例
 │   └── rag_examples/              # RAG示例
@@ -183,19 +194,31 @@ rj-ai-toolkit/
 - **操作系统**: Windows、Linux、macOS
 - **内存**: 建议4GB以上（RAG功能）
 - **存储**: 预留2GB空间用于模型缓存
+- **Ollama**: 用于本地模型部署（可选）
 
 ## 🔧 配置说明
 
 ### 环境变量
 ```bash
-# Agent Toolkit
+# 通义千问 API（可选）
 DASHSCOPE_API_KEY=your_dashscope_api_key
 
-# RAG Toolkit（可选）
-HF_ENDPOINT=https://hf-mirror.com  # 国内镜像加速
+# Ollama 服务（可选，使用本地模型时需要）
+# 默认: http://localhost:11434
 ```
 
-### 数据库配置
+### Ollama 配置
+```bash
+# 启动 Ollama 服务
+ollama serve
+
+# 拉取模型
+ollama pull qwen3:8b
+ollama pull bge-m3:latest
+ollama pull qwen2.5vl:7b
+```
+
+### 向量数据库配置
 - **向量数据库**: ChromaDB（默认）
 - **文档数据库**: SQLite（默认）
 - **可选**: Pinecone、Elasticsearch等
@@ -232,21 +255,19 @@ db_manager.add_documents(results)
 
 ## 🤝 扩展开发
 
-### 自定义Agent工具
+### 自定义模型调用
+
 ```python
-from langchain_core.tools import Tool
+from rj_agent_toolkit.model_clients import call_ollama_llm
 
-def create_custom_tool():
-    def custom_function(input_text: str) -> str:
-        return f"自定义处理: {input_text}"
-    
-    return Tool(
-        name="custom_tool",
-        description="自定义工具描述",
-        func=custom_function
-    )
-
-agent.add_tool(create_custom_tool())
+# 使用自定义模型和参数
+response = call_ollama_llm(
+    system_prompt="你是专业助手",
+    user_input="你好",
+    model="custom-model:latest",
+    base_url="http://your-server:11434/v1",
+    temperature=0.8
+)
 ```
 
 ### 自定义RAG组件
@@ -265,19 +286,24 @@ class CustomParser(BaseParser):
 
 ### 常见问题
 
-1. **API密钥配置**
+1. **Ollama 连接失败**
+   - 确保 Ollama 服务已启动：`ollama serve`
+   - 检查端口是否被占用
+   - 验证模型是否已下载
+
+2. **API密钥配置**
    - 确保设置了正确的环境变量
    - 检查API密钥格式和权限
 
-2. **依赖安装**
+3. **依赖安装**
    - 使用虚拟环境避免冲突
    - 确保Python版本兼容
 
-3. **模型下载**
+4. **模型下载**
    - 配置镜像源加速下载
    - 检查网络连接和防火墙
 
-4. **内存不足**
+5. **内存不足**
    - 调整批处理大小
    - 使用更小的模型
 
@@ -291,16 +317,19 @@ class CustomParser(BaseParser):
 
 ### v0.1.0 (2025-01-21)
 - ✨ 初始版本发布
-- 🤖 Agent Toolkit核心功能
-- 📚 RAG Toolkit基础功能
+- 🔌 Model Clients 核心功能
+  - LLM 模型调用（Ollama、通义千问）
+  - Embedding 模型支持
+  - OCR 模型支持
+- 📚 RAG Toolkit 基础功能
 - 📝 完整文档和示例
 
 ## 🛣️ 开发路线图
 
 ### 短期计划
+- [ ] 🤖 **Agent 框架**: 智能对话代理工具
 - [ ] 🌐 **网络工具**: HTTP请求、API调用工具
 - [ ] 📊 **数据分析**: Excel处理、图表生成工具
-- [ ] 🗄️ **数据库工具**: SQL查询、数据操作工具
 
 ### 中期计划
 - [ ] 🎨 **多媒体**: 图片处理、音频分析工具
@@ -320,6 +349,7 @@ class CustomParser(BaseParser):
 
 感谢以下开源项目的支持：
 - [LangChain](https://github.com/langchain-ai/langchain)
+- [Ollama](https://github.com/ollama/ollama)
 - [ChromaDB](https://github.com/chroma-core/chroma)
 - [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)
 - [BGE Models](https://github.com/FlagOpen/FlagEmbedding)
