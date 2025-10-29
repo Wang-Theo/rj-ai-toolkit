@@ -1,3 +1,8 @@
+# ┌──────────────────────────────┐
+# │ Author:  Renjie Wang         │
+# │ Created: Wed Oct 29 2025     │
+# └──────────────────────────────┘
+
 """
 Embedding模块 - 用于调用本地Ollama部署的embedding模型 (使用LangChain v0.3)
 """

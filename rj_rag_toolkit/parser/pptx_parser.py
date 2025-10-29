@@ -1,3 +1,8 @@
+# ┌──────────────────────────────┐
+# │ Author:  Renjie Wang         │
+# │ Created: Wed Oct 29 2025     │
+# └──────────────────────────────┘
+
 """
 PowerPoint 文件解析模块
 解析 PPTX 文件，将内容转换为 Markdown 格式，表格保留为 HTML 格式

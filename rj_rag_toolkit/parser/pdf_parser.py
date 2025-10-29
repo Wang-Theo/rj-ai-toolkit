@@ -1,3 +1,8 @@
+# ┌──────────────────────────────┐
+# │ Author:  Renjie Wang         │
+# │ Created: Wed Oct 29 2025     │
+# └──────────────────────────────┘
+
 """
 PDF 文档解析模块
 使用 pdfplumber 解析 PDF 文件，将内容转换为 Markdown 格式，支持图片提取和 OCR
