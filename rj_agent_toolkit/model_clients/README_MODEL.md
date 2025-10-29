@@ -11,6 +11,38 @@ Model Clients 提供统一的接口调用各种AI模型，包括：
 
 ---
 
+## 环境配置
+
+### Ollama 服务
+
+确保 Ollama 服务已启动：
+
+```bash
+# 启动 Ollama 服务
+ollama serve
+
+# 拉取所需模型
+ollama pull qwen3:8b
+ollama pull bge-m3:latest
+ollama pull qwen2.5vl:7b
+```
+
+### 通义千问 API
+
+设置环境变量：
+
+```bash
+# Windows
+set DASHSCOPE_API_KEY=your-api-key
+
+# Linux/Mac
+export DASHSCOPE_API_KEY=your-api-key
+```
+
+或在代码中直接传入 `api_key` 参数。
+
+---
+
 ## LLM 模型
 
 ### call_ollama_llm
@@ -208,38 +240,6 @@ table_text = call_ollama_ocr(
 )
 # 输出会包含 HTML 格式的表格
 ```
-
----
-
-## 环境配置
-
-### Ollama 服务
-
-确保 Ollama 服务已启动：
-
-```bash
-# 启动 Ollama 服务
-ollama serve
-
-# 拉取所需模型
-ollama pull qwen3:8b
-ollama pull bge-m3:latest
-ollama pull qwen2.5vl:7b
-```
-
-### 通义千问 API
-
-设置环境变量：
-
-```bash
-# Windows
-set DASHSCOPE_API_KEY=your-api-key
-
-# Linux/Mac
-export DASHSCOPE_API_KEY=your-api-key
-```
-
-或在代码中直接传入 `api_key` 参数。
 
 ---
 
