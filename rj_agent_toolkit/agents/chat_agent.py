@@ -129,3 +129,75 @@ class ChatAgent:
             }
             for tool in self.tools
         ]
+
+    def get_history(self, thread_id: str) -> List[Dict]:
+        """
+        获取指定线程的完整历史对话
+        
+        从 MemorySaver 中读取该线程的最新 checkpoint，
+        返回完整的消息列表（包含角色、内容等信息）
+
+        Args:
+            thread_id: 会话线程 ID
+
+        Returns:
+            List[Dict]: 对话消息列表，每条消息包含 role 和 content 等字段
+                       若无历史或读取失败则返回空列表
+        
+        示例返回格式:
+            [
+                {"role": "user", "content": "你好"},
+                {"role": "assistant", "content": "你好！有什么可以帮助你的吗？"},
+                ...
+            ]
+        """
+        try:
+            # 构造配置以读取最新的 checkpoint
+            config = {"configurable": {"thread_id": thread_id}}
+            
+            # 从 checkpointer 获取最新的 checkpoint
+            checkpoint_tuple = self.checkpointer.get_tuple(config)
+            
+            if checkpoint_tuple is None:
+                return []
+            
+            # 从 checkpoint 中提取 messages
+            checkpoint = checkpoint_tuple.checkpoint
+            if 'channel_values' in checkpoint and 'messages' in checkpoint['channel_values']:
+                messages = checkpoint['channel_values']['messages']
+                
+                # 转换为标准格式
+                result = []
+                for msg in messages:
+                    if hasattr(msg, 'type') and hasattr(msg, 'content'):
+                        # LangChain Message 对象
+                        result.append({
+                            'role': 'assistant' if msg.type == 'ai' else msg.type,
+                            'content': msg.content
+                        })
+                    elif isinstance(msg, dict):
+                        # 已经是字典格式
+                        result.append(msg)
+                
+                return result
+            
+            return []
+            
+        except Exception as e:
+            print(f"[WARNING] 获取历史对话失败: {str(e)}")
+            return []
+
+    def clear_history(self, thread_id: str) -> None:
+        """
+        清除指定线程的历史对话
+        
+        删除 MemorySaver 中该线程的所有 checkpoint 和相关数据
+
+        Args:
+            thread_id: 会话线程 ID
+        """
+        try:
+            self.checkpointer.delete_thread(thread_id)
+            print(f"[INFO] 已清除线程 {thread_id} 的历史对话")
+        except Exception as e:
+            print(f"[WARNING] 清除历史对话失败: {str(e)}")

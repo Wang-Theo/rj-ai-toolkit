@@ -35,15 +35,24 @@ print(result['response'])
 
 ```python
 thread_id = "user-123"
-history = []
 
 # 第一轮
-result = agent.chat("我叫张三", thread_id=thread_id, history_messages=history)
-history = result['messages']
+result1 = agent.chat("我叫张三", thread_id=thread_id)
 
-# 第二轮（带上下文）
-result = agent.chat("我叫什么名字？", thread_id=thread_id, history_messages=history)
+# 第二轮（Agent 自动从 MemorySaver 恢复历史）
+result2 = agent.chat("我叫什么名字？", thread_id=thread_id)
 # 输出: 你叫张三
+```
+
+### 获取历史对话
+
+```python
+# 获取历史
+history = agent.get_history(thread_id="user-123")
+# 返回: [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}, ...]
+
+# 清除历史
+agent.clear_history(thread_id="user-123")
 ```
 
 ### 使用工具
@@ -73,31 +82,44 @@ agent = ChatAgent(
 result = agent.chat("帮我搜索 iPhone 15", thread_id="session-001")
 ```
 
-## 参数说明
+## API 方法
 
-| 参数 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `llm` | LLM 实例 | **必需** | LangChain LLM 模型实例 |
-| `system_prompt` | str | "You are a helpful assistant..." | 系统提示词 |
-| `max_history_messages` | int | 20 | 最大历史消息数量 |
-| `tools` | List | None | 工具列表（可选） |
+### `chat(user_input, thread_id, history_messages=None)`
+发送消息并获取 AI 回复。
 
-## 返回值
+**返回值:** `{'response': str, 'messages': List, 'thread_id': str}`
 
-`chat()` 方法返回字典：
+### `get_history(thread_id)`
+获取指定会话的完整历史对话。
+
+**返回值:** `[{"role": "user", "content": "..."}, ...]`
+
+### `clear_history(thread_id)`
+清除指定会话的历史对话。
+
+### `get_tools_info()`
+获取已加载的工具信息。
+
+## Thread ID 说明
+
+`thread_id` 是自定义的字符串标识符，用于区分不同会话：
 
 ```python
-{
-    'response': str,        # AI 回复
-    'messages': List,       # 完整消息历史
-    'thread_id': str        # 会话 ID
-}
+# 用户级别
+thread_id = f"user-{user_id}"
+
+# 会话级别（UUID）
+import uuid
+thread_id = f"session-{uuid.uuid4()}"
 ```
+
+**要点:**
+- 相同 `thread_id` = 同一会话，自动恢复历史
+- 不同 `thread_id` = 独立会话
 
 ## 注意事项
 
 1. **Token 限制**：合理设置 `max_history_messages` 避免超出模型限制
-2. **工具定义**：工具的 `description` 要清晰，Agent 根据描述决定何时调用
-3. **线程 ID**：为不同用户/会话分配不同的 thread_id
-4. **持久化**：`MemorySaver` 仅在内存中保存状态，重启后会丢失
+2. **持久化**：`MemorySaver` 仅在内存中保存，进程重启后会丢失
+3. **历史恢复**：调用 `chat()` 时无需手动传入 `history_messages`
 
