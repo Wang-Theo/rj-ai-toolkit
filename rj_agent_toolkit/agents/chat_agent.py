@@ -24,7 +24,8 @@ class ChatAgent:
         llm,
         system_prompt: str = "You are a helpful assistant with access to various tools.",
         max_history_messages: int = 20,
-        tools: Optional[List] = None
+        tools: Optional[List] = None,
+        debug: bool = False
     ):
         """
         初始化 Agent
@@ -34,11 +35,13 @@ class ChatAgent:
             system_prompt: 系统提示词
             max_history_messages: 最大历史消息数量(保留最近N条)
             tools: 工具列表,默认为 None,使用时需要传入
+            debug: 是否启用调试模式,显示 Agent 内部思考过程
         """
         self.llm = llm
         self.system_prompt = system_prompt
         self.max_history_messages = max_history_messages
         self.tools = tools if tools is not None else []
+        self.debug = debug
         
         # 创建持久化检查点器
         self.checkpointer = MemorySaver()
@@ -48,7 +51,8 @@ class ChatAgent:
             model=self.llm,
             tools=self.tools,
             system_prompt=system_prompt,
-            checkpointer=self.checkpointer
+            checkpointer=self.checkpointer,
+            debug=self.debug
         )
         
         print(f"[INFO] Agent 初始化成功")
