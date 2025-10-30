@@ -10,6 +10,14 @@
 
 RJ AI Toolkit 是一个企业级AI开发工具包集合，提供了开发智能应用所需的核心组件。每个工具包都可以独立使用，也可以组合使用来构建复杂的AI应用。
 
+### 🤖 [ChatAgent](./rj_agent_toolkit/agents/README_AGENT.md)
+**智能对话代理**
+- **对话管理**: 持久化对话历史，支持多轮对话
+- **工具调用**: 自动调用工具完成复杂任务
+- **上下文控制**: 智能管理对话历史长度
+- **灵活配置**: 自定义系统提示词和工具列表
+- **LangChain集成**: 基于LangChain和LangGraph构建
+
 ### 🔌 [Model Clients](./rj_agent_toolkit/README.md)
 **统一模型调用接口**
 - **LLM模型**: 支持Ollama本地部署、通义千问API
@@ -66,6 +74,30 @@ pip install -r requirements.txt
 ```
 
 ### 基本安装与使用
+
+### ChatAgent 使用示例
+
+```python
+from rj_agent_toolkit import ChatAgent
+from rj_agent_toolkit.model_clients import call_ollama_llm
+
+# 创建 LLM
+llm = call_ollama_llm(model="qwen2.5:7b")
+
+# 创建 Agent
+agent = ChatAgent(
+    llm=llm,
+    system_prompt="你是一个友好的AI助手"
+)
+
+# 开始对话
+result = agent.chat(
+    user_input="你好，请介绍一下自己",
+    thread_id="session-001"
+)
+
+print(result['response'])
+```
 
 ### Model Clients 使用示例
 
@@ -138,6 +170,7 @@ for result in results:
 
 ## 📖 详细文档
 
+- **[ChatAgent 详细文档](./rj_agent_toolkit/agents/README_AGENT.md)** - 智能对话代理的使用说明
 - **[Model Clients 详细文档](./rj_agent_toolkit/README.md)** - 模型调用接口的使用说明
   - [完整 API 文档](./rj_agent_toolkit/model_clients/README.md)
 - **[RAG Toolkit 详细文档](./rj_rag_toolkit/README.md)** - 检索增强生成系统的详细说明
@@ -165,6 +198,9 @@ python examples/rag_examples/complete_rag_demo.py
 rj-ai-toolkit/
 ├── rj_agent_toolkit/              # 🤖 智能对话代理工具包
 │   ├── README.md                  # Agent文档
+│   ├── agents/                    # 🤖 对话代理
+│   │   ├── README_AGENT.md        # Agent详细文档
+│   │   └── chat_agent.py          # ChatAgent实现
 │   ├── model_clients/             # 🔌 模型客户端
 │   │   ├── README.md              # Model Clients文档
 │   │   ├── llm.py                 # LLM模型接口
@@ -327,7 +363,8 @@ class CustomParser(BaseParser):
 ## 🛣️ 开发路线图
 
 ### 短期计划
-- [ ] 🤖 **Agent 框架**: 智能对话代理工具
+- [x] 🤖 **ChatAgent**: 智能对话代理（已完成）
+- [ ] 🛠️ **更多工具**: 内置常用工具集
 - [ ] 🌐 **网络工具**: HTTP请求、API调用工具
 - [ ] 📊 **数据分析**: Excel处理、图表生成工具
 
@@ -348,11 +385,12 @@ class CustomParser(BaseParser):
 ## 🙏 致谢
 
 感谢以下开源项目的支持：
-- [LangChain](https://github.com/langchain-ai/langchain)
-- [Ollama](https://github.com/ollama/ollama)
-- [ChromaDB](https://github.com/chroma-core/chroma)
-- [Sentence Transformers](https://github.com/UKPLab/sentence-transformers)
-- [BGE Models](https://github.com/FlagOpen/FlagEmbedding)
+- [LangChain](https://github.com/langchain-ai/langchain) - Agent和工具框架
+- [LangGraph](https://github.com/langchain-ai/langgraph) - Agent状态管理
+- [Ollama](https://github.com/ollama/ollama) - 本地LLM部署
+- [ChromaDB](https://github.com/chroma-core/chroma) - 向量数据库
+- [Sentence Transformers](https://github.com/UKPLab/sentence-transformers) - 文本向量化
+- [BGE Models](https://github.com/FlagOpen/FlagEmbedding) - 中文Embedding模型
 
 ---
 

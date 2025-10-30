@@ -20,6 +20,9 @@ from .rj_agent_toolkit.model_clients import (
     call_ollama_ocr
 )
 
+# Agent
+from .rj_agent_toolkit.agents.chat_agent import ChatAgent
+
 # RAG Toolkit
 try:
     from .rj_rag_toolkit import (
@@ -54,7 +57,9 @@ __all__ = [
     "call_ollama_llm",
     "call_qwen_llm_api",
     "get_ollama_embedding",
-    "call_ollama_ocr"
+    "call_ollama_ocr",
+    # Agent
+    "ChatAgent"
 ]
 
 # 如果RAG模块可用，添加到导出列表

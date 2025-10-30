@@ -21,17 +21,22 @@ from .model_clients import (
     call_ollama_ocr
 )
 
+# Agent imports
+from .agents.chat_agent import ChatAgent
+
 __version__ = "0.1.0"
 __author__ = "Renjie Wang"
 __email__ = "renjiewang31@gmail.com"
-__description__ = "RJ AI Toolkit - Agent模块（模型客户端）"
+__description__ = "RJ AI Toolkit - Agent模块(模型客户端)"
 
 __all__ = [
     # Model Clients exports
     "call_ollama_llm",
     "call_qwen_llm_api",
     "get_ollama_embedding",
-    "call_ollama_ocr"
+    "call_ollama_ocr",
+    # Agent exports
+    "ChatAgent"
 ]
 
 # 包级别的配置
