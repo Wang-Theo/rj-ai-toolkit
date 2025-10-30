@@ -32,4 +32,4 @@ pip install git+https://github.com/Wang-Theo/rj-ai-toolkit.git
 
 ## 📚 详细文档
 
-完整使用说明、API参数、配置方法等请查看：[Model Clients 完整文档](./model_clients/README.md)
+完整使用说明、API参数、配置方法等请查看：[Model Clients 完整文档](./model_clients/README_MODEL.md)
