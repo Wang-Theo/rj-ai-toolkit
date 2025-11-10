@@ -8,6 +8,10 @@ ChatAgent 是基于 LangChain 和 LangGraph 的智能对话代理，提供：
 - **上下文控制**：智能管理对话历史长度
 - **灵活配置**：自定义系统提示词和工具列表
 
+PromptManager 和 ToolManager 用于管理 agent 的配置：
+- **PromptManager**：管理 system prompt，支持多用户多用途
+- **ToolManager**：双层管理单个 tool 和 toolset，支持元数据存储
+
 ## 快速开始
 
 ### 基本用法
@@ -122,4 +126,82 @@ thread_id = f"session-{uuid.uuid4()}"
 1. **Token 限制**：合理设置 `max_history_messages` 避免超出模型限制
 2. **持久化**：`MemorySaver` 仅在内存中保存，进程重启后会丢失
 3. **历史恢复**：调用 `chat()` 时无需手动传入 `history_messages`
+
+---
+
+## Prompt 和 Tool 管理
+
+### PromptManager
+
+管理 system prompt，支持多用户多用途场景。
+
+```python
+from rj_agent_toolkit.agents.prompt_manager import PromptManager
+
+manager = PromptManager()
+
+# 注册 prompt
+manager.register(
+    prompt_id='gcm_query',
+    user='gcm',
+    prompt_content='你是查询助手...',
+    description='查询专用',
+    update=False  # 允许更新已存在的 prompt
+)
+
+# 获取（两种方式）
+prompt = manager.get_prompt('gcm_query')  # 直接获取
+prompt = manager.get_prompt_by_user('gcm', 'gcm_query')  # 带用户验证
+exists = manager.has_prompt('gcm_query')
+
+# 列出和删除
+all_prompts = manager.list_prompts()
+all_prompts = manager.list_prompts(user='gcm')  # 按用户过滤
+manager.delete_prompt('gcm_query')
+```
+
+### ToolManager
+
+双层管理：Tool 层（单个 tool + 元数据）+ Toolset 层（工具集组合）。
+
+```python
+from rj_agent_toolkit.agents.tool_manager import ToolManager
+from tools.data_querier import query_database  # LangChain tool
+
+manager = ToolManager()
+
+# 1. 注册单个 tool（自动提取 LangChain tool 元数据）
+manager.register_tool(
+    tool_id='query_db',
+    tool_func=query_database,
+    description='查询数据库',  # 选填，LangChain tool 会自动提取
+    category='database',
+    update=False
+)
+
+# 2. Tool 操作
+tool_func = manager.get_tool('query_db')
+exists = manager.has_tool('query_db')
+manager.delete_tool('query_db')
+
+# 3. 注册 toolset（引用 tool_id）
+manager.register_toolset(
+    toolset_id='gcm_query',
+    user='gcm',
+    tool_ids=['query_db'],
+    description='查询工具集',
+    update=False
+)
+
+# 4. Toolset 操作（两种方式）
+tools = manager.get_toolset('gcm_query')  # 直接获取，返回实际函数列表
+tools = manager.get_toolset_by_user('gcm', 'gcm_query')  # 带用户验证
+exists = manager.has_toolset('gcm_query')
+manager.delete_toolset('gcm_query')
+
+# 5. 列出
+all_tools = manager.list_tools()
+all_tools = manager.list_tools(category='database')  # 按分类过滤
+all_toolsets = manager.list_toolsets(user='gcm')  # 按用户过滤
+```
 

@@ -12,7 +12,7 @@
 - **对话管理**: 持久化对话历史，支持多轮对话
 - **工具调用**: 自动调用工具完成复杂任务
 - **上下文控制**: 智能管理对话历史长度
-- **灵活配置**: 自定义系统提示词和工具列表
+- **配置管理**: PromptManager 管理 prompt，ToolManager 管理 tool 和 toolset
 
 ### 🔌 [Model Clients](./model_clients/README_MODEL.md)
 **统一模型调用接口**
