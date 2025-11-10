@@ -10,7 +10,11 @@ AI Agent 模块,提供基于 LangChain 的对话代理功能。
 """
 
 from .chat_agent import ChatAgent
+from .prompt_manager import PromptManager
+from .tool_manager import ToolManager
 
 __all__ = [
-    "ChatAgent"
+    "ChatAgent",
+    "PromptManager",
+    "ToolManager"
 ]

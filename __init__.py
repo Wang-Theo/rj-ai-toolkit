@@ -22,6 +22,8 @@ from .rj_agent_toolkit.model_clients import (
 
 # Agent
 from .rj_agent_toolkit.agents.chat_agent import ChatAgent
+from .rj_agent_toolkit.agents.prompt_manager import PromptManager
+from .rj_agent_toolkit.agents.tool_manager import ToolManager
 
 # RAG Toolkit
 try:
@@ -59,7 +61,9 @@ __all__ = [
     "get_ollama_embedding",
     "call_ollama_ocr",
     # Agent
-    "ChatAgent"
+    "ChatAgent",
+    "PromptManager",
+    "ToolManager"
 ]
 
 # 如果RAG模块可用，添加到导出列表

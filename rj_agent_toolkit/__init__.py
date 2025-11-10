@@ -23,6 +23,8 @@ from .model_clients import (
 
 # Agent imports
 from .agents.chat_agent import ChatAgent
+from .agents.prompt_manager import PromptManager
+from .agents.tool_manager import ToolManager
 
 __version__ = "0.1.0"
 __author__ = "Renjie Wang"
@@ -36,7 +38,9 @@ __all__ = [
     "get_ollama_embedding",
     "call_ollama_ocr",
     # Agent exports
-    "ChatAgent"
+    "ChatAgent",
+    "PromptManager",
+    "ToolManager"
 ]
 
 # 包级别的配置
