@@ -1,30 +1,52 @@
+# ============================================
 # Agent Toolkit 依赖
+# ============================================
+# LangChain 生态系统（统一版本 >= 0.3.0）
 langchain>=0.3.0
-langchain-openai>=0.3.0
 langchain-core>=0.3.0
-langchain-community>=0.3.0
+langchain-openai>=0.3.0
 langchain-text-splitters>=0.3.0
+langchain-ollama>=0.3.0
+langgraph>=0.2.0
+
+# OpenAI 客户端
 openai>=1.0.0
 
+# Ollama 客户端
+ollama>=0.4.0
+
+# ============================================
 # RAG Toolkit - 核心依赖
+# ============================================
+# 向量数据库
 chromadb>=0.4.0
-sentence-transformers>=2.2.0
-transformers>=4.30.0
-torch>=2.0.0
+
+# 文本处理和检索
 jieba>=0.42.1
 rank-bm25>=0.2.2
 numpy>=1.24.0
-scipy>=1.10.0
-tqdm>=4.65.0
 tiktoken>=0.5.0
 
+# ============================================
 # RAG Toolkit - Parser 依赖
+# ============================================
+# PDF 解析
 pdfplumber>=0.10.0
+
+# Word 文档解析
 python-docx>=0.8.11
+
+# PowerPoint 解析
 python-pptx>=0.6.21
+
+# 邮件解析
 mail-parser>=3.15.0
 extract-msg>=0.45.0
+
+# HTML 和 Markdown 处理
 beautifulsoup4>=4.12.0
 html2text>=2020.1.16
-Pillow>=10.0.0
 mdformat>=0.7.0
+
+# 图片处理
+Pillow>=10.0.0
