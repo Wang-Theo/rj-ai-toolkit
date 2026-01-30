@@ -28,6 +28,7 @@ class MSGParser(BaseParser):
         use_ocr: bool = False, 
         ocr_func = None,
         save_attachments: bool = True,
+        save_images: bool = None,
         attachments_dir: Optional[Union[str, Path]] = None,
         image_dpi: int = 300
     ):
@@ -38,11 +39,16 @@ class MSGParser(BaseParser):
             use_ocr: 是否使用OCR功能，默认False
             ocr_func: OCR处理函数，接收图片路径返回文本。签名: func(image_path: str) -> str
             save_attachments: 是否保存附件（包括嵌入图片和附件文件），默认True
+            save_images: 是否保存图片（与save_attachments等效，为兼容PDFParser接口），默认None（使用save_attachments值）
             attachments_dir: 附件保存目录，默认为None（与MSG文件同目录创建attachments文件夹）
             image_dpi: 图片 DPI，默认300
         """
         super().__init__(use_ocr, ocr_func)
-        self.save_attachments = save_attachments
+        # 兼容 save_images 参数（与PDFParser保持一致）
+        if save_images is not None:
+            self.save_attachments = save_images
+        else:
+            self.save_attachments = save_attachments
         self.attachments_dir = Path(attachments_dir) if attachments_dir else None
         self.image_dpi = image_dpi
     
